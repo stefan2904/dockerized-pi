@@ -8,6 +8,10 @@ RUN apt-get update && apt-get install -y git python3 make g++ && \
 WORKDIR /src
 RUN git clone --depth 1 https://github.com/badlogic/pi-mono.git .
 
+# Set version suffix to -git for the coding agent
+RUN cd packages/coding-agent && \
+    npm version $(node -p "require('./package.json').version")-git --no-git-tag-version
+
 # Install dependencies and build core packages in correct order
 RUN npm install
 RUN cd packages/tui && npm run build
