@@ -1,13 +1,13 @@
 {
     "providers": {
         "ollama": {
-            "baseUrl": "http://localhost:11434/v1",
+            "baseUrl": "http://host.docker.internal:11434/v1",
             "api": "openai-completions",
             "apiKey": "ollama",
             "models": []
         },
         "lmstudio": {
-            "baseUrl": "http://localhost:11435/v1",
+            "baseUrl": "http://host.docker.internal:11435/v1",
             "api": "openai-completions",
             "apiKey": "lmstudio",
             "models": [
