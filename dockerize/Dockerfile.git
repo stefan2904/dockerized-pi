@@ -1,0 +1,40 @@
+# Build stage
+FROM node:25-bookworm AS builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y git python3 make g++ && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+RUN git clone --depth 1 https://github.com/badlogic/pi-mono.git .
+
+# Install dependencies and build core packages in correct order
+RUN npm install
+RUN cd packages/tui && npm run build
+RUN cd packages/ai && npm run build
+RUN cd packages/agent && npm run build
+RUN cd packages/coding-agent && npm run build
+
+# Install the built agent globally
+RUN npm install -g ./packages/coding-agent
+
+# Final stage
+FROM node:25-bookworm-slim
+
+# Create user
+RUN groupadd -r pi && useradd -r -g pi -m -d /home/pi pi
+
+# Copy globally installed pi and its dependencies from builder
+COPY --from=builder /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Set up workspace
+WORKDIR /workspace
+ENV HOME=/home/pi
+
+# Switch to non-root user
+USER pi
+
+# Entrypoint: pass args through to pi
+ENTRYPOINT ["pi"]
+

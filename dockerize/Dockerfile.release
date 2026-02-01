@@ -16,4 +16,3 @@ USER pi
 
 # Entrypoint: pass args through to pi
 ENTRYPOINT ["pi"]
-
