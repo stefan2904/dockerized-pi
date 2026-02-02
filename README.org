@@ -1,5 +1,12 @@
-# pi-experiments
+* pi-experiments
 
-> :warning: This repo is not safe.
+#+BEGIN_QUOTE
+:warning: *This repo is not safe.*
+#+END_QUOTE
 
 Repo to play with [[https://github.com/badlogic/pi-mono][pi]] and [[https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent][pi-coding-agent]].
+
+** Projects
+
+*** [[file:dockerize][dockerize]]
+Dockerfiles and scripts to containerize the =pi= coding agent.
