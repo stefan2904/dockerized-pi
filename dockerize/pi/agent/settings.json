@@ -1,6 +1,6 @@
 {
   "lastChangelogVersion": "0.51.0",
-  "theme": "nightowl",
+  "theme": "light",
   "defaultProvider": "google-antigravity",
   "defaultModel": "gemini-3-flash",
   "defaultThinkingLevel": "medium",

@@ -1,3 +1,4 @@
 pi/agent/bin
 pi/agent/auth.json
 pi/agent/sessions/*
+pi/agent/sessions/logs/*
