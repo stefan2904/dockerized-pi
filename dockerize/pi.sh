@@ -59,14 +59,41 @@ if [ -n "$DEBUGFLAGS" ]; then
     echo "INFO: docker run flags: $DEBUGFLAGS"
 fi
 
-# Canonicalize PWD for session directory naming to avoid everything being in --workspace--
+# Find the project root by looking for .git, .project, or .projectile
+# upward from PWD, stopping at $HOME or /
+PROJECT_ROOT=""
+curr="$PWD"
+while true; do
+    if [ -d "$curr/.git" ] || [ -f "$curr/.project" ] || [ -f "$curr/.projectile" ]; then
+        PROJECT_ROOT="$curr"
+        break
+    fi
+    [ "$curr" = "/" ] || [ "$curr" = "$HOME" ] && break
+    curr=$(dirname "$curr")
+done
+
+if [ -z "$PROJECT_ROOT" ]; then
+    PROJECT_ROOT="$PWD"
+fi
+
+# Canonicalize PROJECT_ROOT for session directory naming to avoid everything being in --workspace--
 # Matches logic in session-manager.js: cwd.replace(/^[/\\]/, "").replace(/[/\\:]/g, "-")
-CWD_SAFE=$(echo "$PWD" | sed 's|^[/\\]||' | sed 's|[/\\:]|-|g')
+CWD_SAFE=$(echo "$PROJECT_ROOT" | sed 's|^[/\\]||' | sed 's|[/\\:]|-|g')
 SESSION_DIR="/home/pi/.pi/agent/sessions/--${CWD_SAFE}--"
 
+# Calculate relative path from PROJECT_ROOT to PWD
+REL_PATH=${PWD:${#PROJECT_ROOT}}
+REL_PATH=${REL_PATH#/}
+
+echo "INFO: Using project root: $PROJECT_ROOT"
+if [ -n "$REL_PATH" ]; then
+    echo "INFO: Using relative path: $REL_PATH"
+fi
+echo "_____________________________________________"
+
 docker run --rm -it \
-  -v "$PWD":/workspace:rw \
+  -v "$PROJECT_ROOT":/workspace:rw \
   -v "$SCRIPT_DIR/pi":/home/pi/.pi:rw \
-  -w /workspace \
+  -w "/workspace/$REL_PATH" \
   --env-file "$SCRIPT_DIR/.env" $DEBUGFLAGS \
   pi-coding-agent --session-dir "$SESSION_DIR" "${@}"
