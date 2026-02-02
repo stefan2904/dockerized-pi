@@ -21,14 +21,12 @@ ENV HOME=/home/pi
 # Change default shell to zsh for root and pi user
 RUN chsh -s /bin/zsh && chsh -s /bin/zsh pi
 
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 # Switch to non-root user
 USER pi
 RUN wget -O /home/pi/.zshrc https://grml.org/console/zshrc && wget -O /home/pi/.zshrc.local https://grml.org/console/zshrc.local
 
-RUN git config --global user.email "pi@example.com" && \
-    git config --global user.name "Pi"
-
-
-
 # Entrypoint: pass args through to pi
-ENTRYPOINT ["pi"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
