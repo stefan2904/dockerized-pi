@@ -1,8 +1,8 @@
 {
-  "lastChangelogVersion": "0.51.0",
+  "lastChangelogVersion": "0.51.1",
   "theme": "light",
-  "defaultProvider": "google-antigravity",
-  "defaultModel": "gemini-3-flash",
+  "defaultProvider": "github-copilot",
+  "defaultModel": "gemini-3-flash-preview",
   "defaultThinkingLevel": "medium",
   "hideThinkingBlock": true,
   "shellPath": "/bin/zsh",
