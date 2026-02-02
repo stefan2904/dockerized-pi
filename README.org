@@ -28,6 +28,7 @@ The following environment variables can be configured in =dockerize/.env= (see =
 
 **** Extensions
 - =/quota-antigravity=: Show Antigravity usage limits and quotas.
+- =/quota-copilot=: Show GitHub Copilot usage statistics and quotas.
 
 ** Pi-generated experiments
 
