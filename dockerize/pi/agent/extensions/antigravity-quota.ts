@@ -186,13 +186,19 @@ export default function (pi: ExtensionAPI) {
   // Register /quota-full command
   pi.registerCommand("quota-full", {
     description: "Display the full JSON response from the Antigravity quota API",
-    handler: async (_args, ctx) => {
+    parameters: Type.Object({
+      filename: Type.Optional(Type.String({ description: "Optional filename to write the JSON to" })),
+    }),
+    handler: async (args, ctx) => {
       try {
         ctx.ui.notify("Fetching Antigravity quota (full)...", "info");
         const { loadData, modelsData } = await fetchQuota();
         const fullJson = JSON.stringify({ loadData, modelsData }, null, 2);
 
-        if (ctx.hasUI) {
+        if (args.filename) {
+          fs.writeFileSync(args.filename, fullJson, "utf8");
+          ctx.ui.notify(`Quota JSON written to ${args.filename}`, "info");
+        } else if (ctx.hasUI) {
           await ctx.ui.editor("Antigravity Quota (Full JSON)", fullJson);
         } else {
           console.log(fullJson);
