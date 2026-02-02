@@ -17,15 +17,16 @@ if [[ "$1" == "--install" ]]; then
         echo "Alias 'pi' already exists in $ZSHRC"
     else
         echo "Installing 'pi' alias in $ZSHRC..."
-        if printf "\nalias pi='%s/pi.sh' # pi-coding-agent alias\n" "$SCRIPT_DIR" >> "$ZSHRC"; then
-            echo "Successfully installed 'pi' alias. Please run 'source ~/.zshrc' or restart your terminal."
-        else
-            echo "Error: Failed to write to $ZSHRC."
-            echo "Please manually add the following line to your $ZSHRC:"
-            echo "alias pi='$SCRIPT_DIR/pi.sh'"
-            exit 1
-        fi
+        printf "\nalias pi='%s/pi.sh' # pi-coding-agent alias\n" "$SCRIPT_DIR" >> "$ZSHRC"
     fi
+
+    if grep -q "alias pic=" "$ZSHRC" || grep -q "alias pic =" "$ZSHRC"; then
+        echo "Alias 'pic' already exists in $ZSHRC"
+    else
+        echo "Installing 'pic' alias in $ZSHRC..."
+        printf "alias pic='%s/pi.sh --continue' # pi-coding-agent alias\n" "$SCRIPT_DIR" >> "$ZSHRC"
+    fi
+    echo "Successfully installed aliases. Please run 'source ~/.zshrc' or restart your terminal."
     exit 0
 fi
 
