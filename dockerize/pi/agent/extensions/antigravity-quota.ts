@@ -183,6 +183,26 @@ export default function (pi: ExtensionAPI) {
     },
   });
 
+  // Register /quota-full command
+  pi.registerCommand("quota-full", {
+    description: "Display the full JSON response from the Antigravity quota API",
+    handler: async (_args, ctx) => {
+      try {
+        ctx.ui.notify("Fetching Antigravity quota (full)...", "info");
+        const { loadData, modelsData } = await fetchQuota();
+        const fullJson = JSON.stringify({ loadData, modelsData }, null, 2);
+
+        if (ctx.hasUI) {
+          await ctx.ui.editor("Antigravity Quota (Full JSON)", fullJson);
+        } else {
+          console.log(fullJson);
+        }
+      } catch (error) {
+        ctx.ui.notify(`Error fetching quota: ${error instanceof Error ? error.message : String(error)}`, "error");
+      }
+    },
+  });
+
   // Register tool for the LLM
   pi.registerTool({
     name: "get_antigravity_quota",
