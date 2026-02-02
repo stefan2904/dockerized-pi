@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "0.50.9",
+  "lastChangelogVersion": "0.51.0",
   "theme": "light",
   "defaultProvider": "lmstudio",
   "defaultModel": "openai/gpt-oss-20b",
@@ -23,5 +23,8 @@
     "google-antigravity/claude-sonnet-4-5-thinking",
     "github-copilot/claude-opus-4.5",
     "google-antigravity/claude-opus-4-5-thinking"
+  ],
+  "packages": [
+    "git:github.com/mitsuhiko/agent-stuff"
   ]
 }
