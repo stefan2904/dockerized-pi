@@ -27,6 +27,13 @@ if [[ "$1" == "--install" ]]; then
     exit 0
 fi
 
+# --update flag
+if [[ "$1" == "--update" ]]; then
+    cd "$SCRIPT_DIR"
+    ./build.sh
+    exit 0
+fi
+
 
 echo "Using env file: $SCRIPT_DIR/.env"
 
