@@ -155,8 +155,12 @@ export default function (pi: ExtensionAPI) {
                 let resetStr = "Unknown";
                 if (resetDate) {
                   const timeStr = resetDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+                  const dateStr = resetDate.toLocaleDateString([], { day: "2-digit", month: "short" });
                   const isToday = resetDate.toDateString() === new Date().toDateString();
-                  resetStr = isToday ? timeStr : `${resetDate.getDate()}.${resetDate.getMonth() + 1} ${timeStr}`;
+                  const countdownDays = Math.floor((resetDate.getTime() - Date.now()) / 1000 / 60 / 60 / 24);
+                  const countdownHours = Math.floor((resetDate.getTime() - Date.now()) / 1000 / 60 / 60) % 24;
+                  const countdownStr = `(${countdownDays} ${countdownDays !== 1 ? "days" : "day"} ${countdownHours} ${countdownHours !== 1 ? "hours" : "hour"} left)`;
+                  resetStr = isToday ? timeStr + countdownStr : `${dateStr} at ${timeStr} ... ${countdownStr}`;
                 }
 
                 const isExhausted = info.quotaInfo!.isExhausted;
