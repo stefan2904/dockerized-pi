@@ -17,6 +17,7 @@ Includes various helpers and opinionated customizations.
 **** Environment Variables
 The following environment variables can be configured in =dockerize/.env= (see =dockerize/.env.template=):
 - =BOT_GH_TOKEN=: GitHub personal access token (for =gh= CLI authentication).
+- =BOT_SENTRY_TOKEN=: Sentry auth token (for =sentry-cli= authentication). Get one at [[https://docs.sentry.io/cli/configuration/][Sentry CLI Configuration]].
 - =BOT_GIT_NAME=: Git user name (for changes done in the container/by pi).
 - =BOT_GIT_EMAIL=: Git user email (for changes done in the container/by pi).
 

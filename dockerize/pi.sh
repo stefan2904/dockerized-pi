@@ -133,5 +133,6 @@ docker run --rm -it \
   -w "/workspace/$REL_PATH" \
   -e PI_PROJECT_ROOT="$PROJECT_ROOT" \
   -e PI_HOST_HOSTNAME="$(hostname)" \
+  ${BOT_SENTRY_TOKEN:+-e BOT_SENTRY_TOKEN} \
   --env-file "$SCRIPT_DIR/.env" $DEBUGFLAGS \
   pi-coding-agent $TOOLS $SESSION_DIR_CMD "${@}"

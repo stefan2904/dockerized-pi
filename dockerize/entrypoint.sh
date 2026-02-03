@@ -15,5 +15,10 @@ if [ -n "$BOT_GH_TOKEN" ]; then
     echo "$BOT_GH_TOKEN" | gh auth login --with-token
 fi
 
+# Configure Sentry CLI if token is provided
+if [ -n "$BOT_SENTRY_TOKEN" ]; then
+    printf "[auth]\ntoken=%s\n" "$BOT_SENTRY_TOKEN" > "$HOME/.sentryclirc"
+fi
+
 # Execute pi with all passed arguments
 exec pi "$@"
