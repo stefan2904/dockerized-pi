@@ -6,7 +6,7 @@
 
 Repo to play with [[https://github.com/badlogic/pi-mono][pi]] and [[https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent][pi-coding-agent]].
 
-----
+-----
 
 ** Projects
 
@@ -32,7 +32,7 @@ Install using =./pi.sh --install=.
 - =picommit=: Automatically stage and commit changes using the =/commit= template.
 - =./pi.sh --sessions=: List session summaries (number of sessions per project).
 
-----
+-----
 
 **** Prompt Templates
 - =/commit=: Automatically stage and commit changes with conventional commit messages.
@@ -50,7 +50,7 @@ Install using =./pi.sh --install=.
 - =get_copilot_quota=: Fetch GitHub Copilot usage limits (available to the model).
 - =get_files_changed=: List files touched in the session (available to the model).
 
-----
+-----
 
 ** Pi-generated experiments
 
