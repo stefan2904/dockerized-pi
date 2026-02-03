@@ -9,8 +9,12 @@ RUN groupadd -g $GID -r pi && useradd -r -u $UID -g $GID -m -d /home/pi pi
 RUN apt-get update && apt-get install -y zsh git wget curl jq tree 
 
 # Install python stuff
+ENV UV_PYTHON_INSTALL_DIR=/usr/local/python
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
-RUN uv python install --default && uv tool install autopep8
+RUN uv python install --default && \
+    ln -sf $(uv python find) /usr/local/bin/python3 && \
+    ln -sf /usr/local/bin/python3 /usr/local/bin/python && \
+    uv tool install autopep8
 
 # Install ghcli
 RUN (mkdir -p /usr/share/keyrings && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | tee /usr/share/keyrings/githubcli-archive-keyring.gpg > /dev/null) && \
