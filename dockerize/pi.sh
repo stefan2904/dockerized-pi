@@ -1,5 +1,10 @@
 #!/bin/bash
 
+
+# TOOLS="=--tools read,bash,edit,write" # default
+TOOLS="--tools read,bash,edit,write,grep,find,ls"
+
+
 # location of this script
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -111,4 +116,4 @@ docker run --rm -it \
   -v "$SCRIPT_DIR/pi":/home/pi/.pi:rw \
   -w "/workspace/$REL_PATH" \
   --env-file "$SCRIPT_DIR/.env" $DEBUGFLAGS \
-  pi-coding-agent --session-dir "$SESSION_DIR" "${@}"
+  pi-coding-agent $TOOLS --session-dir "$SESSION_DIR" "${@}"
