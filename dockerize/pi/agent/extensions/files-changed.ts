@@ -9,6 +9,7 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { DynamicBorder } from "@mariozechner/pi-coding-agent";
 import { Container, Key, matchesKey, type SelectItem, SelectList, Text } from "@mariozechner/pi-tui";
+import { Type } from "@sinclair/typebox";
 
 interface FileEntry {
 	path: string;
@@ -18,8 +19,68 @@ interface FileEntry {
 
 type FileToolName = "read" | "write" | "edit";
 
+function getFilesChanged(ctx: any) {
+	// Get the current branch (path from leaf to root)
+	const branch = ctx.sessionManager.getBranch();
+
+	// First pass: collect tool calls (id -> {path, name}) from assistant messages
+	const toolCalls = new Map<string, { path: string; name: FileToolName; timestamp: number }>();
+
+	for (const entry of branch) {
+		if (entry.type !== "message") continue;
+		const msg = entry.message;
+
+		if (msg.role === "assistant" && Array.isArray(msg.content)) {
+			for (const block of msg.content) {
+				if (block.type === "toolCall") {
+					const name = block.name;
+					if (name === "read" || name === "write" || name === "edit") {
+						const path = block.arguments?.path;
+						if (path && typeof path === "string") {
+							toolCalls.set(block.id, { path, name, timestamp: msg.timestamp });
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Second pass: match tool results to get the actual execution timestamp
+	const fileMap = new Map<string, FileEntry>();
+
+	for (const entry of branch) {
+		if (entry.type !== "message") continue;
+		const msg = entry.message;
+
+		if (msg.role === "toolResult") {
+			const toolCall = toolCalls.get(msg.toolCallId);
+			if (!toolCall) continue;
+
+			const { path, name } = toolCall;
+			const timestamp = msg.timestamp;
+
+			const existing = fileMap.get(path);
+			if (existing) {
+				existing.operations.add(name);
+				if (timestamp > existing.lastTimestamp) {
+					existing.lastTimestamp = timestamp;
+				}
+			} else {
+				fileMap.set(path, {
+					path,
+					operations: new Set([name]),
+					lastTimestamp: timestamp,
+				});
+			}
+		}
+	}
+
+	// Sort by most recent first
+	return Array.from(fileMap.values()).sort((a, b) => b.lastTimestamp - a.lastTimestamp);
+}
+
 export default function (pi: ExtensionAPI) {
-	pi.registerCommand("files", {
+	pi.registerCommand("files-changed", {
 		description: "Show files read/written/edited in this session",
 		handler: async (_args, ctx) => {
 			if (!ctx.hasUI) {
@@ -27,68 +88,12 @@ export default function (pi: ExtensionAPI) {
 				return;
 			}
 
-			// Get the current branch (path from leaf to root)
-			const branch = ctx.sessionManager.getBranch();
+			const files = getFilesChanged(ctx);
 
-			// First pass: collect tool calls (id -> {path, name}) from assistant messages
-			const toolCalls = new Map<string, { path: string; name: FileToolName; timestamp: number }>();
-
-			for (const entry of branch) {
-				if (entry.type !== "message") continue;
-				const msg = entry.message;
-
-				if (msg.role === "assistant" && Array.isArray(msg.content)) {
-					for (const block of msg.content) {
-						if (block.type === "toolCall") {
-							const name = block.name;
-							if (name === "read" || name === "write" || name === "edit") {
-								const path = block.arguments?.path;
-								if (path && typeof path === "string") {
-									toolCalls.set(block.id, { path, name, timestamp: msg.timestamp });
-								}
-							}
-						}
-					}
-				}
-			}
-
-			// Second pass: match tool results to get the actual execution timestamp
-			const fileMap = new Map<string, FileEntry>();
-
-			for (const entry of branch) {
-				if (entry.type !== "message") continue;
-				const msg = entry.message;
-
-				if (msg.role === "toolResult") {
-					const toolCall = toolCalls.get(msg.toolCallId);
-					if (!toolCall) continue;
-
-					const { path, name } = toolCall;
-					const timestamp = msg.timestamp;
-
-					const existing = fileMap.get(path);
-					if (existing) {
-						existing.operations.add(name);
-						if (timestamp > existing.lastTimestamp) {
-							existing.lastTimestamp = timestamp;
-						}
-					} else {
-						fileMap.set(path, {
-							path,
-							operations: new Set([name]),
-							lastTimestamp: timestamp,
-						});
-					}
-				}
-			}
-
-			if (fileMap.size === 0) {
+			if (files.length === 0) {
 				ctx.ui.notify("No files read/written/edited in this session", "info");
 				return;
 			}
-
-			// Sort by most recent first
-			const files = Array.from(fileMap.values()).sort((a, b) => b.lastTimestamp - a.lastTimestamp);
 
 			const openSelected = async (file: FileEntry): Promise<void> => {
 				try {
@@ -169,6 +174,31 @@ export default function (pi: ExtensionAPI) {
 					},
 				};
 			});
+		},
+	});
+
+	pi.registerTool({
+		name: "get_files_changed",
+		label: "Get Files Changed",
+		description: "Lists all files the model has read, written, or edited in the active session branch.",
+		parameters: Type.Object({}),
+		async execute(_toolCallId, _params, _signal, _onUpdate, ctx) {
+			const files = getFilesChanged(ctx);
+			const result = files.map((f) => ({
+				path: f.path,
+				operations: Array.from(f.operations),
+				lastTimestamp: f.lastTimestamp,
+			}));
+
+			return {
+				content: [
+					{
+						type: "text",
+						text: JSON.stringify(result, null, 2),
+					},
+				],
+				details: result,
+			};
 		},
 	});
 }
