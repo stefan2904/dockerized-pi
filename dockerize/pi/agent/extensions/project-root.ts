@@ -4,9 +4,11 @@ export default function (pi: ExtensionAPI) {
   const updateStatus = (ui: any) => {
     const root = process.env.PI_PROJECT_ROOT;
     const hostname = process.env.PI_HOST_HOSTNAME;
+    const mode = process.env.PI_MOUNT_MODE;
     let status = "";
     if (root) status += root;
     if (hostname) status += ` @ ${hostname}`;
+    if (mode === "ro") status += " (RO)";
 
     if (status) {
       // Use muted color to blend in with the footer

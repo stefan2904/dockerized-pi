@@ -174,6 +174,7 @@ docker run --rm $INTERACTIVE_FLAGS \
   -v "$SCRIPT_DIR/pi":/home/pi/.pi:rw \
   -w "/workspace/$REL_PATH" \
   -e PI_PROJECT_ROOT="$PROJECT_ROOT" \
+  -e PI_MOUNT_MODE="$MOUNT_MODE" \
   -e PI_HOST_HOSTNAME="$(hostname)" \
   ${BOT_SENTRY_TOKEN:+-e BOT_SENTRY_TOKEN} \
   --env-file "$SCRIPT_DIR/.env" $DEBUGFLAGS \
