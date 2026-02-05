@@ -8,10 +8,43 @@ TOOLS="--tools read,bash,edit,write,grep,find,ls"
 # location of this script
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+# Handle flags
+MOUNT_MODE="rw"
+DO_INSTALL=false
+DO_UPDATE=false
+DO_SESSIONS=false
+NEW_ARGS=()
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --ro|--readonly)
+            MOUNT_MODE="ro"
+            shift
+            ;;
+        --install)
+            DO_INSTALL=true
+            shift
+            ;;
+        --update)
+            DO_UPDATE=true
+            shift
+            ;;
+        --sessions)
+            DO_SESSIONS=true
+            shift
+            ;;
+        *)
+            NEW_ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+set -- "${NEW_ARGS[@]}"
+
 touch "$SCRIPT_DIR/.env" # if user did not create it based on .env.template
 
 # --install flag
-if [[ "$1" == "--install" ]]; then
+if [ "$DO_INSTALL" = true ]; then
     ZSHRC="$HOME/.zshrc.local"
     if [ ! -f "$ZSHRC" ]; then
         echo "Error: zsh config not found at $ZSHRC"
@@ -43,7 +76,7 @@ if [[ "$1" == "--install" ]]; then
 fi
 
 # --update flag
-if [[ "$1" == "--update" ]]; then
+if [ "$DO_UPDATE" = true ]; then
     cd "$SCRIPT_DIR"
     CURRENT_VERSION=$(docker run --rm pi-coding-agent --version)
     LATEST_VERSION=$(curl -s https://registry.npmjs.org/@mariozechner/pi-coding-agent/latest | jq -r .version)
@@ -62,7 +95,7 @@ if [[ "$1" == "--update" ]]; then
 fi
 
 # --sessions flag
-if [[ "$1" == "--sessions" ]]; then
+if [ "$DO_SESSIONS" = true ]; then
     SESSIONS_DIR="$SCRIPT_DIR/pi/agent/sessions"
     if [ ! -d "$SESSIONS_DIR" ]; then
         echo "No sessions found at $SESSIONS_DIR"
@@ -125,6 +158,9 @@ echo "INFO: Using project root: $PROJECT_ROOT"
 if [ -n "$REL_PATH" ]; then
     echo "INFO: Using relative path: $REL_PATH"
 fi
+if [ "$MOUNT_MODE" = "ro" ]; then
+    echo "INFO: Mounting /workspace as READ-ONLY"
+fi
 echo "_____________________________________________"
 
 # Determine if we are in an interactive terminal
@@ -134,7 +170,7 @@ if [ ! -t 0 ]; then
 fi
 
 docker run --rm $INTERACTIVE_FLAGS \
-  -v "$PROJECT_ROOT":/workspace:rw \
+  -v "$PROJECT_ROOT":/workspace:$MOUNT_MODE \
   -v "$SCRIPT_DIR/pi":/home/pi/.pi:rw \
   -w "/workspace/$REL_PATH" \
   -e PI_PROJECT_ROOT="$PROJECT_ROOT" \
