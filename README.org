@@ -1,38 +1,39 @@
 * dockerized-pi
 
-"There are many coding agents dockerizations, but this one is mine."
+/"There are many coding agents dockerizations, but this one is mine."/
 
 Dockerfiles and scripts to containerize the [[https://github.com/badlogic/pi-mono][pi]] coding agent.
 Includes various helpers and opinionated customizations.
 
 -----
 
-** Setup & Usage
+** Setup 
 
-1. **Clone the Repository**:
+1. *Clone the Repository*:
    #+begin_src bash
    git clone https://github.com/stefan2904/dockerized-pi.git
    cd dockerized-pi
    #+end_src
 
-2. **Configure Environment (Optional)**: Copy =dockerize/.env.template= to =dockerize/.env= and fill in your configuration.
+2. *Configure Environment (Optional)*: Copy =dockerize/.env.template= to =dockerize/.env= and fill in your configuration.
    #+begin_src bash
    cp dockerize/.env.template dockerize/.env
    #+end_src
    /Note: This is optional. You can also log in to model providers directly within the agent using the =/login= command./
 
-3. **Build the Image**: Run the build script to create/update the =pi-coding-agent= Docker image.
+3. *Build the Image*: Run the build script to create/update the =pi-coding-agent= Docker image.
    #+begin_src bash
    cd dockerize && ./build.sh
    #+end_src
 
-4. **(Optional) Install Zsh Aliases**: Install the =pi=, =pic=, and =picommit= aliases for easy access from any directory.
+4. *(Optional) Install Zsh Aliases*: Install the =pi=, =pic=, and =picommit= aliases for easy access from any directory.
    #+begin_src bash
    ./pi.sh --install
    #+end_src
    /Note: This adds aliases to =~/.zshrc.local=. Ensure this file is sourced in your =~/.zshrc=./
 
-*** Environment Variables
+** Environment Variables
+
 The following environment variables can be configured in =dockerize/.env= (see =dockerize/.env.template=):
 - =BOT_GH_TOKEN=: GitHub personal access token (for =gh= CLI authentication).
 - =BOT_SENTRY_TOKEN=: Sentry auth token (for =sentry-cli= authentication). Get one at [[https://turing-6b.sentry.io/settings/account/api/auth-tokens/][Sentry Personal Tokens]].
@@ -43,7 +44,8 @@ The following environment variables can be configured in =dockerize/.env= (see =
 - =GOOGLE_GENERATIVE_AI_API_KEY=: Google Generative AI API key (Gemini).
 - =PI_CACHE_RETENTION=: Cache retention period (e.g., =7d=).
 
-*** Dockerize Scripts (run from =dockerize/=, or use =pi= alias)
+** Dockerize Scripts (run from =dockerize/=, or use =pi= alias)
+
 - =./pi.sh --install=: Install =pi=, =pic=, and =picommit= aliases.
 - =./pi.sh --update=: Update the pi agent to the latest version and rebuild the image.
 - =./pi.sh --sessions=: List past sessions stored in =dockerize/pi/agent/sessions=.
@@ -51,7 +53,8 @@ The following environment variables can be configured in =dockerize/.env= (see =
 - =./pi.sh --ro= or =--readonly=: Mount the workspace in read-only mode.
 - =./pi.sh <args>=: Run =pi= with the given arguments inside the container (see =./pi.sh --help=).
 
-*** Pi Aliases
+** Pi Aliases
+
 Once installed, use these from any project directory:
 - =pi=: Run the agent in the current directory.
 - =pic=: Continue the last session (=pi --continue=).
@@ -62,17 +65,21 @@ Once installed, use these from any project directory:
 ** Features
 
 *** Prompt Templates
+
 - =/commit=: Automatically stage and commit changes with conventional commit messages.
 
 *** Extensions
+
 - =/quota-antigravity=: Show Antigravity usage limits and quotas.
 - =/quota-copilot=: Show GitHub Copilot usage statistics and quotas.
 - =/files-changed=: Show a list of files read, written, or edited in the current session.
 
 *** Skills
+
 - =git-autopep8=: Automatically formats changed lines in Python files using =git= and =autopep8=.
 
 *** Tools (Custom)
+
 - =get_antigravity_quota=: Fetch Antigravity usage limits (available to the model).
 - =get_copilot_quota=: Fetch GitHub Copilot usage limits (available to the model).
 - =get_files_changed=: List files touched in the session (available to the model).
