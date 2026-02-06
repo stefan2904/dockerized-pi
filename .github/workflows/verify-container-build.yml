@@ -1,4 +1,4 @@
-name: Test Scripts
+name: Verify Container Build
 
 on:
   push:
