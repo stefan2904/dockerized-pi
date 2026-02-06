@@ -3,6 +3,7 @@ FROM node:current-trixie-slim
 # Create user (Debian syntax); matching UID/GID of local user
 ARG UID
 ARG GID
+RUN userdel -r node
 RUN if [ -n "$UID" ] && [ -n "$GID" ]; then \
         if getent group "$GID" >/dev/null; then \
             gname=$(getent group "$GID" | cut -d: -f1); \

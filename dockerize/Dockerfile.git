@@ -36,6 +36,7 @@ RUN apt-get update && apt-get install -y zsh git python3 wget curl jq && \
 # Create user; matching UID/GID of local user
 ARG UID
 ARG GID
+RUN userdel -r node
 RUN if [ -n "$UID" ] && [ -n "$GID" ]; then \
         if getent group "$GID" >/dev/null; then \
             gname=$(getent group "$GID" | cut -d: -f1); \
