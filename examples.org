@@ -4,7 +4,7 @@
 A demo showing Graz public transport departure times and route planning.
 
 *** [[https://github.com/bot2904/org-vs-orgdown-demo][org-vs-orgdown-demo]]
-A demonstration comparing Markdown and Orgdown syntax.
+A live demonstration comparing Markdown and Orgdown syntax, autonomously synthesized by the pi coding agent during the STG LLM Meetup in Graz.
 
 ** About the bot2904 Account
 The [[https://github.com/bot2904][bot2904]] account is a dedicated bot account used by [[https://github.com/stefan2904][stefan2904]]'s pi agent.
