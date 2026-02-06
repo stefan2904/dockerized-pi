@@ -15,50 +15,50 @@ Includes various helpers and opinionated customizations.
    cd dockerized-pi
    #+end_src
 
-2. *Configure Environment (Optional)*: Copy =.env.template= to =.env= and fill in your configuration.
+2. *Configure Environment (Optional)*: Copy ~=env.template~ to ~=env~ and fill in your configuration.
    #+begin_src bash
    cp .env.template .env
    #+end_src
-   /Note: This is optional. You can also log in to model providers directly within the agent using the =/login= command./
+   /Note: This is optional. You can also log in to model providers directly within the agent using the ~/login~ command./
 
-3. *Build the Image*: Run the build script to create/update the =pi-coding-agent= Docker image.
+3. *Build the Image*: Run the build script to create/update the ~pi-coding-agent~ Docker image.
    #+begin_src bash
    ./build.sh
    #+end_src
 
-4. *(Optional) Install Zsh Aliases*: Install the =pi=, =pic=, and =picommit= aliases for easy access from any directory.
+4. *(Optional) Install Zsh Aliases*: Install the ~pi~, ~pic~, and ~picommit~ aliases for easy access from any directory.
    #+begin_src bash
    ./pi.sh --install
    #+end_src
-   /Note: This adds aliases to =~/.zshrc.local=. Ensure this file is sourced in your =~/.zshrc=./
+   /Note: This adds aliases to ~~/.zshrc.local~. Ensure this file is sourced in your ~~/.zshrc~./
 
 ** Environment Variables
 
-The following environment variables can be configured in =.env= (see =.env.template=):
-- =BOT_GH_TOKEN=: GitHub personal access token (for =gh= CLI authentication).
-- =BOT_SENTRY_TOKEN=: Sentry auth token (for =sentry-cli= authentication). Get one at [[https://turing-6b.sentry.io/settings/account/api/auth-tokens/][Sentry Personal Tokens]].
-- =BOT_GIT_NAME=: Git user name (for changes done in the container/by pi).
-- =BOT_GIT_EMAIL=: Git user email (for changes done in the container/by pi).
-- =ANTHROPIC_API_KEY=: Anthropic API key.
-- =OPENAI_API_KEY=: OpenAI API key.
-- =GOOGLE_GENERATIVE_AI_API_KEY=: Google Generative AI API key (Gemini).
-- =PI_CACHE_RETENTION=: Cache retention period (e.g., =7d=).
+The following environment variables can be configured in ~=env~ (see ~=env.template~):
+- ~BOT_GH_TOKEN~: GitHub personal access token (for ~gh~ CLI authentication).
+- ~BOT_SENTRY_TOKEN~: Sentry auth token (for ~sentry-cli~ authentication). Get one at [[https://turing-6b.sentry.io/settings/account/api/auth-tokens/][Sentry Personal Tokens]].
+- ~BOT_GIT_NAME~: Git user name (for changes done in the container/by pi).
+- ~BOT_GIT_EMAIL~: Git user email (for changes done in the container/by pi).
+- ~ANTHROPIC_API_KEY~: Anthropic API key.
+- ~OPENAI_API_KEY~: OpenAI API key.
+- ~GOOGLE_GENERATIVE_AI_API_KEY~: Google Generative AI API key (Gemini).
+- ~PI_CACHE_RETENTION~: Cache retention period (e.g., ~7d~).
 
-** Dockerize Scripts (use =pi= alias or run from repo root)
+** Dockerize Scripts (use ~pi~ alias or run from repo root)
 
-- =./pi.sh --install=: Install =pi=, =pic=, and =picommit= aliases.
-- =./pi.sh --update=: Update the pi agent to the latest version and rebuild the image.
-- =./pi.sh --sessions=: List past sessions stored in =pi/agent/sessions=.
-- =./pi.sh -r= or =--resume=: Select and resume a past session.
-- =./pi.sh --ro= or =--readonly=: Mount the workspace in read-only mode.
-- =./pi.sh <args>=: Run =pi= with the given arguments inside the container (see =./pi.sh --help=).
+- ~./pi.sh --install~: Install ~pi~, ~pic~, and ~picommit~ aliases.
+- ~./pi.sh --update~: Update the pi agent to the latest version and rebuild the image.
+- ~./pi.sh --sessions~: List past sessions stored in ~pi/agent/sessions~.
+- ~./pi.sh -r~ or ~--resume~: Select and resume a past session.
+- ~./pi.sh --ro~ or ~--readonly~: Mount the workspace in read-only mode.
+- ~./pi.sh <args>~: Run ~pi~ with the given arguments inside the container (see ~./pi.sh --help~).
 
 ** Pi Aliases
 
 Once installed, use these from any project directory:
-- =pi=: Run the agent in the current directory.
-- =pic=: Continue the last session (=pi --continue=).
-- =picommit=: Automatically stage and commit changes using the =/commit= template.
+- ~pi~: Run the agent in the current directory.
+- ~pic~: Continue the last session (~pi --continue~).
+- ~picommit~: Automatically stage and commit changes using the ~/commit~ template.
 
 -----
 
@@ -66,20 +66,20 @@ Once installed, use these from any project directory:
 
 *** Prompt Templates
 
-- =/commit=: Automatically stage and commit changes with conventional commit messages.
+- ~/commit~: Automatically stage and commit changes with conventional commit messages.
 
 *** Extensions
 
-- =/quota-antigravity=: Show Antigravity usage limits and quotas.
-- =/quota-copilot=: Show GitHub Copilot usage statistics and quotas.
-- =/files-changed=: Show a list of files read, written, or edited in the current session.
+- ~/quota-antigravity~: Show Antigravity usage limits and quotas.
+- ~/quota-copilot~: Show GitHub Copilot usage statistics and quotas.
+- ~/files-changed~: Show a list of files read, written, or edited in the current session.
 
 *** Skills
 
-- =git-autopep8=: Automatically formats changed lines in Python files using =git= and =autopep8=.
+- ~git-autopep8~: Automatically formats changed lines in Python files using ~git~ and ~autopep8~.
 
 *** Tools (Custom)
 
-- =get_antigravity_quota=: Fetch Antigravity usage limits (available to the model).
-- =get_copilot_quota=: Fetch GitHub Copilot usage limits (available to the model).
-- =get_files_changed=: List files touched in the session (available to the model).
+- ~get_antigravity_quota~: Fetch Antigravity usage limits (available to the model).
+- ~get_copilot_quota~: Fetch GitHub Copilot usage limits (available to the model).
+- ~get_files_changed~: List files touched in the session (available to the model).
