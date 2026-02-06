@@ -101,14 +101,19 @@ if [ "$DO_SESSIONS" = true ]; then
         echo "No sessions found at $SESSIONS_DIR"
         exit 0
     fi
-    echo "Sessions directory: $SESSIONS_DIR"
+    BOLD='\033[1m'
+    CYAN='\033[0;36m'
+    GREEN='\033[0;32m'
+    NC='\033[0m' # No Color
+
+    echo -e "${BOLD}Sessions directory:${NC} ${CYAN}$SESSIONS_DIR${NC}"
     find "$SESSIONS_DIR" -maxdepth 1 -mindepth 1 -type d | sort | while read -r dir; do
         basename_dir=$(basename "$dir")
         if [ "$basename_dir" == "logs" ]; then
             continue
         fi
         count=$(find "$dir" -maxdepth 1 -mindepth 1 -type f -name "*.jsonl" | wc -l)
-        echo "$basename_dir: $count sessions"
+        echo -e "${BOLD}${GREEN}$basename_dir${NC}: $count sessions"
         find "$dir" -maxdepth 1 -mindepth 1 -type f -name "*.jsonl" -exec basename {} \; | sort -r | head -n 5 | while read -r session; do
             echo "  - $session"
         done
