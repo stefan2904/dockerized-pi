@@ -56,27 +56,31 @@ if [ "$DO_INSTALL" = true ]; then
         exit 1
     fi
 
-    if grep -q "alias pi=" "$ZSHRC" || grep -q "alias pi =" "$ZSHRC"; then
-        echo "Alias 'pi' already exists in $ZSHRC"
-    else
-        echo "Installing 'pi' alias in $ZSHRC..."
-        printf "\nalias pi='%s/pi.sh' # pi-coding-agent alias\n" "$SCRIPT_DIR" >> "$ZSHRC"
+    if ! grep -q "# pi-coding-agent alias" "$ZSHRC"; then
+        printf "\n" >> "$ZSHRC"
     fi
 
-    if grep -q "alias pic=" "$ZSHRC" || grep -q "alias pic =" "$ZSHRC"; then
-        echo "Alias 'pic' already exists in $ZSHRC"
-    else
-        echo "Installing 'pic' alias in $ZSHRC..."
-        printf "alias pic='%s/pi.sh --continue' # pi-coding-agent alias\n" "$SCRIPT_DIR" >> "$ZSHRC"
-    fi
+    for alias_name in "pi" "pic" "picommit"; do
+        if grep -q "^alias $alias_name=" "$ZSHRC" || grep -q "^alias $alias_name =" "$ZSHRC"; then
+            echo "Updating '$alias_name' alias in $ZSHRC..."
+            grep -v "^alias $alias_name=" "$ZSHRC" | grep -v "^alias $alias_name =" > "$ZSHRC.tmp" && mv "$ZSHRC.tmp" "$ZSHRC"
+        else
+            echo "Installing '$alias_name' alias in $ZSHRC..."
+        fi
 
-    if grep -q "alias picommit=" "$ZSHRC" || grep -q "alias picommit =" "$ZSHRC"; then
-        echo "Alias 'picommit' already exists in $ZSHRC"
-    else
-        echo "Installing 'picommit' alias in $ZSHRC..."
-        printf "alias picommit=\"%s/pi.sh '/commit --force --user \\\"\$(git config user.name)\\\" --email \\\"\$(git config user.email)\\\"'\" # pi-coding-agent alias\n" "$SCRIPT_DIR" >> "$ZSHRC"
-    fi
-    echo "Successfully installed aliases. Please run 'source ~/.zshrc' or restart your terminal."
+        case "$alias_name" in
+            pi)
+                printf "alias pi='%s/pi.sh' # pi-coding-agent alias\n" "$SCRIPT_DIR" >> "$ZSHRC"
+                ;;
+            pic)
+                printf "alias pic='%s/pi.sh --continue' # pi-coding-agent alias\n" "$SCRIPT_DIR" >> "$ZSHRC"
+                ;;
+            picommit)
+                printf "alias picommit=\"%s/pi.sh '/commit --force --user \\\"\$(git config user.name)\\\" --email \\\"\$(git config user.email)\\\"'\" # pi-coding-agent alias\n" "$SCRIPT_DIR" >> "$ZSHRC"
+                ;;
+        esac
+    done
+    echo "Successfully installed/updated aliases. Please run 'source ~/.zshrc' or restart your terminal."
     exit 0
 fi
 
