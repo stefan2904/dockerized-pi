@@ -28,23 +28,27 @@ jobs:
           docker info
           docker run hello-world
 
-  build-macos:
-    name: Build Docker on macOS (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [macos-13, macos-14] # 13 is Intel, 14 is Apple Silicon
+  cross-build:
+    name: Cross-build for macOS/ARM64 and Intel
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Docker
-        run: |
-          brew install colima docker
-          colima start
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
-      - name: Verify Docker
-        run: |
-          docker version
-          docker info
-          docker run hello-world
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and (optionally) Export
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: false
+          tags: test-image:latest
+          # To actually build for "macOS" is usually not possible inside Docker 
+          # as Docker only runs Linux containers. Usually people mean 
+          # "Build images that run on macOS (Intel/M1) via Docker Desktop".
+          # These are linux/amd64 and linux/arm64 images.
