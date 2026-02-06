@@ -50,37 +50,44 @@ touch "$SCRIPT_DIR/.env" # if user did not create it based on .env.template
 
 # --install flag
 if [ "$DO_INSTALL" = true ]; then
-    ZSHRC="$HOME/.zshrc.local"
-    if [ ! -f "$ZSHRC" ]; then
-        echo "Error: zsh config not found at $ZSHRC"
+    SHELL_CONFIG=""
+    for f in "$HOME/.zshrc.local" "$HOME/.zshrc" "$HOME/.bashrc"; do
+        if [ -f "$f" ]; then
+            SHELL_CONFIG="$f"
+            break
+        fi
+    done
+
+    if [ -z "$SHELL_CONFIG" ]; then
+        echo "Error: Could not find ~/.zshrc.local, ~/.zshrc, or ~/.bashrc"
         exit 1
     fi
 
-    if ! grep -q "# pi-coding-agent alias" "$ZSHRC"; then
-        printf "\n" >> "$ZSHRC"
+    if ! grep -q "# pi-coding-agent alias" "$SHELL_CONFIG"; then
+        printf "\n" >> "$SHELL_CONFIG"
     fi
 
     for alias_name in "pi" "pic" "picommit"; do
-        if grep -q "^alias $alias_name=" "$ZSHRC" || grep -q "^alias $alias_name =" "$ZSHRC"; then
-            echo "Updating '$alias_name' alias in $ZSHRC..."
-            grep -v "^alias $alias_name=" "$ZSHRC" | grep -v "^alias $alias_name =" > "$ZSHRC.tmp" && mv "$ZSHRC.tmp" "$ZSHRC"
+        if grep -q "^alias $alias_name=" "$SHELL_CONFIG" || grep -q "^alias $alias_name =" "$SHELL_CONFIG"; then
+            echo "Updating '$alias_name' alias in $SHELL_CONFIG..."
+            grep -v "^alias $alias_name=" "$SHELL_CONFIG" | grep -v "^alias $alias_name =" > "$SHELL_CONFIG.tmp" && mv "$SHELL_CONFIG.tmp" "$SHELL_CONFIG"
         else
-            echo "Installing '$alias_name' alias in $ZSHRC..."
+            echo "Installing '$alias_name' alias in $SHELL_CONFIG..."
         fi
 
         case "$alias_name" in
             pi)
-                printf "alias pi='%s/pi.sh' # pi-coding-agent alias\n" "$SCRIPT_DIR" >> "$ZSHRC"
+                printf "alias pi='%s/pi.sh' # pi-coding-agent alias\n" "$SCRIPT_DIR" >> "$SHELL_CONFIG"
                 ;;
             pic)
-                printf "alias pic='%s/pi.sh --continue' # pi-coding-agent alias\n" "$SCRIPT_DIR" >> "$ZSHRC"
+                printf "alias pic='%s/pi.sh --continue' # pi-coding-agent alias\n" "$SCRIPT_DIR" >> "$SHELL_CONFIG"
                 ;;
             picommit)
-                printf "alias picommit=\"%s/pi.sh '/commit --force --user \\\"\$(git config user.name)\\\" --email \\\"\$(git config user.email)\\\"'\" # pi-coding-agent alias\n" "$SCRIPT_DIR" >> "$ZSHRC"
+                printf "alias picommit=\"%s/pi.sh '/commit --force --user \\\"\$(git config user.name)\\\" --email \\\"\$(git config user.email)\\\"'\" # pi-coding-agent alias\n" "$SCRIPT_DIR" >> "$SHELL_CONFIG"
                 ;;
         esac
     done
-    echo "Successfully installed/updated aliases. Please run 'source ~/.zshrc' or restart your terminal."
+    echo "Successfully installed/updated aliases. Please run 'source $SHELL_CONFIG' or restart your terminal."
     exit 0
 fi
 
