@@ -424,7 +424,16 @@ function renderQuotaTable(lines: string[], theme: any, rows: QuotaRow[]) {
   lines.push(theme.fg("border", separator));
   lines.push(theme.fg("accent", renderRow([...headers])));
   lines.push(theme.fg("border", separator));
-  for (const row of data) lines.push(renderRow(row));
+
+  let lastProvider: string | undefined;
+  for (const row of rows) {
+    if (lastProvider !== undefined && row.provider !== lastProvider) {
+      lines.push(theme.fg("border", separator));
+    }
+    lines.push(renderRow([row.provider, row.account, row.plan, row.metric, row.value, row.reset]));
+    lastProvider = row.provider;
+  }
+
   lines.push(theme.fg("border", separator));
 }
 
@@ -615,7 +624,7 @@ export default function (pi: ExtensionAPI) {
             }
 
             renderQuotaTable(lines, theme, rows);
-            lines.push(theme.fg("dim", "(Auto-closes in 60s)"));
+            lines.push(theme.fg("dim", "(Auto-closes in 30s)"));
 
             return {
               render: () => lines,
@@ -625,7 +634,7 @@ export default function (pi: ExtensionAPI) {
           { placement: "aboveEditor" }
         );
 
-        const closeTimer = setTimeout(() => ctx.ui.setWidget("quota", undefined), 60000);
+        const closeTimer = setTimeout(() => ctx.ui.setWidget("quota", undefined), 30000);
         closeTimer.unref?.();
       } catch (error) {
         ctx.ui.notify(`Error fetching quotas: ${error instanceof Error ? error.message : String(error)}`, "error");
