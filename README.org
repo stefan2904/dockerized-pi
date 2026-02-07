@@ -23,8 +23,9 @@ Includes various helpers and opinionated customizations.
 
 3. *🏗️ Build the Image*: Run the build script to create/update the ~pi-coding-agent~ Docker image.
    #+begin_src bash
-   ./build.sh
+   ./build.sh [version]
    #+end_src
+   /Note:/ If no version is specified, it defaults to ~latest~.
 
 4. *🐚 (Optional) Install Zsh Aliases*: Install the ~pi~, ~pic~, and ~picommit~ aliases for easy access from any directory.
    #+begin_src bash
@@ -67,15 +68,24 @@ Once installed, use these from any project directory:
 
 ** ✨ Features
 
+*** 🗂️ Project Root Discovery
+
+The ~pi.sh~ script automatically detects your project root by searching upwards for ~.git~, ~.project~, or ~.projectile~ markers. This ensures that session history and file contexts are consistently mapped even if you run ~pi~ from a subdirectory.
+
+*** 🐚 Shell Environment
+
+The container uses ~zsh~ with the excellent [[https://grml.org/zsh/][grml configuration]], providing a powerful and interactive shell environment for the agent (and you).
+
 *** 📝 Prompt Templates
 
 - ~/commit~: Automatically stage and commit changes with conventional commit messages.
 
 *** 🧩 Extensions
 
+- ~/files-changed~: Show a list of files read, written, or edited in the current session.
+- ~/quota~: Show usage quotas for all logged-in providers.
 - ~/quota-antigravity~: Show Antigravity usage limits and quotas.
 - ~/quota-copilot~: Show GitHub Copilot usage statistics and quotas.
-- ~/files-changed~: Show a list of files read, written, or edited in the current session.
 
 *** 🧠 Skills
 
@@ -83,6 +93,8 @@ Once installed, use these from any project directory:
 
 *** 🛠️ Tools (Custom)
 
+- ~get_files_changed~: List files touched in the session (available to the model).
 - ~get_antigravity_quota~: Fetch Antigravity usage limits (available to the model).
 - ~get_copilot_quota~: Fetch GitHub Copilot usage limits (available to the model).
-- ~get_files_changed~: List files touched in the session (available to the model).
+- ~get_gemini_cli_quota~: Fetch Google Gemini CLI tier info and model quota availability.
+- ~get_openai_codex_quota~: Probe OpenAI Codex quota headers and account plan details.
