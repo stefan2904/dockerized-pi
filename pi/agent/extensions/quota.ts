@@ -1,4 +1,5 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import { truncateToWidth, visibleWidth } from "@mariozechner/pi-tui";
 import { Type } from "@sinclair/typebox";
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -343,6 +344,7 @@ type QuotaRow = {
   metric: string;
   value: string;
   reset: string;
+  progressRemaining?: number;
 };
 
 function formatDateUtc(value: string): string {
@@ -375,16 +377,22 @@ function collectGoogleModelRows(provider: string, account: string, plan: string,
         (info.quotaInfo.remainingFraction !== undefined && info.quotaInfo.remainingFraction < 1)
       );
     })
-    .sort((a, b) => (a[1].quotaInfo?.remainingFraction ?? 1) - (b[1].quotaInfo?.remainingFraction ?? 1));
+    .sort(([a], [b]) => a.localeCompare(b));
 
-  return relevantModels.map(([id, info]) => ({
-    provider,
-    account,
-    plan,
-    metric: id,
-    value: info.quotaInfo?.remainingFraction !== undefined ? `${(info.quotaInfo.remainingFraction * 100).toFixed(1)}%` : "N/A",
-    reset: info.quotaInfo?.resetTime ? formatDateUtc(info.quotaInfo.resetTime) : "unknown",
-  }));
+  return relevantModels.map(([id, info]) => {
+    const remainingFraction =
+      typeof info.quotaInfo?.remainingFraction === "number" ? info.quotaInfo.remainingFraction : undefined;
+
+    return {
+      provider,
+      account,
+      plan,
+      metric: id,
+      value: remainingFraction !== undefined ? `${(remainingFraction * 100).toFixed(1)}%` : "N/A",
+      reset: info.quotaInfo?.resetTime ? formatDateUtc(info.quotaInfo.resetTime) : "unknown",
+      progressRemaining: remainingFraction,
+    };
+  });
 }
 
 function codexWindowFields(window?: CodexRateWindow): { value: string; reset: string } {
@@ -404,37 +412,73 @@ function truncateCell(value: string, maxWidth: number): string {
   return `${normalized.slice(0, maxWidth - 1)}…`;
 }
 
-function renderQuotaTable(lines: string[], theme: any, rows: QuotaRow[]) {
-  const headers = ["Provider", "Account", "Plan", "Metric", "Value", "Reset/Note"] as const;
-  const data = rows.map((r) => [r.provider, r.account, r.plan, r.metric, r.value, r.reset]);
-  const maxColumnWidths = [14, 18, 12, 14, 18, 14] as const;
+function renderProgressBar(fraction: number, width = 8): string {
+  const clamped = Math.max(0, Math.min(1, fraction));
+  const filled = Math.round(clamped * width);
+  return `${"█".repeat(filled)}${"░".repeat(width - filled)}`;
+}
+
+function barValue(row: QuotaRow): string {
+  if (typeof row.progressRemaining !== "number") return "-";
+  return renderProgressBar(row.progressRemaining);
+}
+
+function padVisible(value: string, width: number): string {
+  const vis = visibleWidth(value);
+  return value + " ".repeat(Math.max(0, width - vis));
+}
+
+function renderQuotaTable(theme: any, rows: QuotaRow[], maxWidth?: number): string[] {
+  const lines: string[] = [];
+  const headers = ["Provider", "Account", "Plan", "Metric", "Value", "Bar", "Reset/Note"] as const;
+  const data = rows.map((r) => [r.provider, r.account, r.plan, r.metric, r.value, barValue(r), r.reset]);
+  const maxColumnWidths = [14, 18, 12, 14, 14, 8, 14] as const;
+  const minColumnWidths = [8, 10, 8, 8, 8, 8, 8] as const;
 
   const widths = headers.map((header, index) => {
-    const contentWidth = Math.max(header.length, ...data.map((row) => row[index].length));
+    const contentWidth = Math.max(visibleWidth(header), ...data.map((row) => visibleWidth(row[index])));
     return Math.min(contentWidth, maxColumnWidths[index]);
   });
 
+  const totalWidth = () => widths.reduce((sum, w) => sum + w, 0) + widths.length * 3 + 1;
+  if (maxWidth && totalWidth() > maxWidth) {
+    const shrinkOrder = [1, 4, 3, 6, 0, 2];
+    while (totalWidth() > maxWidth) {
+      let reduced = false;
+      for (const idx of shrinkOrder) {
+        if (widths[idx] > minColumnWidths[idx]) {
+          widths[idx] -= 1;
+          reduced = true;
+          if (totalWidth() <= maxWidth) break;
+        }
+      }
+      if (!reduced) break;
+    }
+  }
+
   const separator = `+${widths.map((w) => "-".repeat(w + 2)).join("+")}+`;
   const renderRow = (cols: string[]) => {
-    const clamped = cols.map((c, i) => truncateCell(c, widths[i]).padEnd(widths[i]));
-    return `| ${clamped.join(" | ")} |`;
+    const clamped = cols.map((c, i) => padVisible(truncateToWidth(truncateCell(c, widths[i]), widths[i]), widths[i]));
+    const row = `| ${clamped.join(" | ")} |`;
+    return maxWidth ? truncateToWidth(row, maxWidth) : row;
   };
 
   lines.push(theme.fg("accent", theme.bold("Provider Quotas")));
-  lines.push(theme.fg("border", separator));
+  lines.push(theme.fg("border", maxWidth ? truncateToWidth(separator, maxWidth) : separator));
   lines.push(theme.fg("accent", renderRow([...headers])));
-  lines.push(theme.fg("border", separator));
+  lines.push(theme.fg("border", maxWidth ? truncateToWidth(separator, maxWidth) : separator));
 
   let lastProvider: string | undefined;
   for (const row of rows) {
     if (lastProvider !== undefined && row.provider !== lastProvider) {
-      lines.push(theme.fg("border", separator));
+      lines.push(theme.fg("border", maxWidth ? truncateToWidth(separator, maxWidth) : separator));
     }
-    lines.push(renderRow([row.provider, row.account, row.plan, row.metric, row.value, row.reset]));
+    lines.push(renderRow([row.provider, row.account, row.plan, row.metric, row.value, barValue(row), row.reset]));
     lastProvider = row.provider;
   }
 
-  lines.push(theme.fg("border", separator));
+  lines.push(theme.fg("border", maxWidth ? truncateToWidth(separator, maxWidth) : separator));
+  return lines;
 }
 
 export default function (pi: ExtensionAPI) {
@@ -507,7 +551,6 @@ export default function (pi: ExtensionAPI) {
         ctx.ui.setWidget(
           "quota",
           (_tui, theme) => {
-            const lines: string[] = [];
             const rows: QuotaRow[] = [];
 
             for (const entry of providerResults) {
@@ -623,11 +666,12 @@ export default function (pi: ExtensionAPI) {
               rows.push({ provider: "-", account: "-", plan: "-", metric: "quota", value: "No data", reset: "-" });
             }
 
-            renderQuotaTable(lines, theme, rows);
-            lines.push(theme.fg("dim", "(Auto-closes in 30s)"));
-
             return {
-              render: () => lines,
+              render: (width: number) => {
+                const lines = renderQuotaTable(theme, rows, width);
+                lines.push(truncateToWidth(theme.fg("dim", "(Auto-closes in 30s)"), width));
+                return lines;
+              },
               invalidate: () => {},
             };
           },
