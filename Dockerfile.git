@@ -26,7 +26,7 @@ RUN cd packages/coding-agent && npm pack && mv mariozechner-pi-coding-agent-*.tg
 FROM node:current-trixie-slim
 
 # Install stuff
-RUN apt-get update && apt-get install -y zsh git python3 wget curl jq && \
+RUN apt-get update && apt-get install -y zsh git python3 wget curl jq sudo gosu && \
     (mkdir -p /usr/share/keyrings && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | tee /usr/share/keyrings/githubcli-archive-keyring.gpg > /dev/null) && \
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null && \
     apt-get update && apt-get install -y gh && \
@@ -50,6 +50,9 @@ RUN if [ -n "$UID" ] && [ -n "$GID" ]; then \
         useradd -r -g pi -m -d /home/pi pi; \
     fi
 
+# Allow pi user to use sudo with a password
+RUN usermod -aG sudo pi
+
 # Install the tarball globally in the final stage
 # This ensures all dependencies are correctly handled and binaries are in the PATH
 COPY --from=builder /pi-coding-agent.tgz /pi-coding-agent.tgz
@@ -65,9 +68,12 @@ RUN chsh -s /bin/zsh && chsh -s /bin/zsh pi
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Switch to non-root user
+# Switch to non-root user for setup
 USER pi
 RUN wget -O /home/pi/.zshrc https://grml.org/console/zshrc && wget -O /home/pi/.zshrc.local https://grml.org/console/zshrc.local
+
+# Switch back to root for entrypoint (it drops privileges after setup)
+USER root
 
 # Entrypoint: pass args through to pi
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

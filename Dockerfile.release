@@ -18,7 +18,10 @@ RUN if [ -n "$UID" ] && [ -n "$GID" ]; then \
     fi
 
 # Install stuff
-RUN apt-get update && apt-get install -y zsh git wget curl jq tree file
+RUN apt-get update && apt-get install -y zsh git wget curl jq tree file sudo gosu
+
+# Allow pi user to use sudo with a password
+RUN usermod -aG sudo pi
 
 # Install python stuff
 ENV UV_PYTHON_INSTALL_DIR=/usr/local/python
@@ -50,9 +53,12 @@ RUN chsh -s /bin/zsh && chsh -s /bin/zsh pi
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Switch to non-root user
+# Switch to non-root user for setup
 USER pi
 RUN wget -O /home/pi/.zshrc https://grml.org/console/zshrc && wget -O /home/pi/.zshrc.local https://grml.org/console/zshrc.local
+
+# Switch back to root for entrypoint (it drops privileges after setup)
+USER root
 
 # Entrypoint: pass args through to pi
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
