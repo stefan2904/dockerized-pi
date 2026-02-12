@@ -138,6 +138,11 @@ DEBUGFLAGS=""
 # test volumes: ./pi.sh -c 'touch ~/.pi/test'
 
 
+if [ -f ".pi_ro" ]; then
+    MOUNT_MODE="ro"
+    echo "WARNING: .pi_ro found in current directory. Forcing READ-ONLY mount."
+fi
+
 echo "INFO: Using env file: $SCRIPT_DIR/.env"
 if [ -n "$DEBUGFLAGS" ]; then
     echo "INFO: docker run flags: $DEBUGFLAGS"
