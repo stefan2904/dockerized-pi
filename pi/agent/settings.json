@@ -1,8 +1,8 @@
 {
   "lastChangelogVersion": "0.53.0",
   "theme": "light",
-  "defaultProvider": "kilo-code",
-  "defaultModel": "z-ai/glm-5:free",
+  "defaultProvider": "github-copilot",
+  "defaultModel": "claude-opus-4.6",
   "defaultThinkingLevel": "high",
   "hideThinkingBlock": true,
   "shellPath": "/bin/zsh",
