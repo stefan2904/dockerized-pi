@@ -11,6 +11,11 @@
       "provider": "github-copilot",
       "modelId": "gemini-3-flash-preview",
       "thinkingLevel": "medium"
+    },
+    "opus": {
+      "provider": "github-copilot",
+      "modelId": "claude-opus-4.6",
+      "thinkingLevel": "high"
     }
   }
 }
