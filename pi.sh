@@ -107,23 +107,28 @@ fi
 # --update flag
 if [ "$DO_UPDATE" = true ]; then
     cd "$SCRIPT_DIR"
-    CURRENT_VERSION=$(./pi.sh --version)
+    CURRENT_VERSION=$(./pi.sh --version </dev/null)
     LATEST_VERSION=$(curl -s https://registry.npmjs.org/@mariozechner/pi-coding-agent/latest | jq -r .version)
-    >&2 echo "Latest pi version:           $LATEST_VERSION"
-    >&2 echo "Curent installed pi version: $CURRENT_VERSION"
+
+    >&2 echo "Latest pi version:            $LATEST_VERSION"
+    >&2 echo "Current installed pi version: $CURRENT_VERSION"
+
     if [ "$CURRENT_VERSION" == "$LATEST_VERSION" ]; then
         >&2 echo "Already up to date!"
         exit 0
     else
         >&2 echo "Updating pi to version $LATEST_VERSION ..."
     fi
+
     ./build.sh "$LATEST_VERSION"
     >&2 echo "Updating configured packages ..."
     ./pi.sh update
-    UPDATED_VERSION=$(./pi.sh --version)
+
+    UPDATED_VERSION=$(./pi.sh --version </dev/null)
     >&2 echo "Updated to pi version: $UPDATED_VERSION"
-    if [ "$CURRENT_VERSION" == "$UPDATED_VERSION" ]; then
-        >&2 echo " Version did not change!"
+
+    if [ "$UPDATED_VERSION" != "$LATEST_VERSION" ]; then
+        >&2 echo "Warning: expected version $LATEST_VERSION but got $UPDATED_VERSION"
     fi
     exit 0
 fi
@@ -216,9 +221,9 @@ fi
 >&2 echo "_____________________________________________"
 
 # Determine if we are in an interactive terminal
-INTERACTIVE_FLAGS="-it"
-if [ ! -t 0 ]; then
-    INTERACTIVE_FLAGS=""
+INTERACTIVE_FLAGS=""
+if [ -t 0 ] && [ -t 1 ]; then
+    INTERACTIVE_FLAGS="-it"
 fi
 
 docker run --rm $INTERACTIVE_FLAGS \
