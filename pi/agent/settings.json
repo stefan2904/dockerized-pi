@@ -1,8 +1,8 @@
 {
-  "lastChangelogVersion": "0.54.0",
+  "lastChangelogVersion": "0.54.2",
   "theme": "light",
-  "defaultProvider": "github-copilot",
-  "defaultModel": "claude-opus-4.6",
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-5.3-codex",
   "defaultThinkingLevel": "high",
   "hideThinkingBlock": true,
   "shellPath": "/bin/zsh",
@@ -13,28 +13,44 @@
   "editorPaddingX": 0,
   "collapseChangelog": true,
   "enabledModels": [
-    "kilo-code/z-ai/glm-5:free",
     "kilo-code/openrouter/free",
-    "kilo-code/openai/gpt-oss-120b",
     "kilo-code/minimax/minimax-m2.5:free",
     "kilo-code/deepseek/deepseek-r1-0528",
-    "github-copilot/gpt-5.2",
-    "github-copilot/gemini-3-pro-preview",
+    "kilo-code/openai/gpt-oss-120b",
+    "google-antigravity/gemini-3-flash",
+    "google-gemini-cli/gemini-3-flash-preview",
     "github-copilot/gemini-3-flash-preview",
-    "github-copilot/gpt-5.2-codex",
-    "github-copilot/claude-opus-4.6"
+    "github-copilot/gpt-5.2",
+    "openai-codex/gpt-5.3-codex-spark",
+    "kilo-code/z-ai/glm-5:free",
+    "github-copilot/gemini-3-pro-preview",
+    "google-gemini-cli/gemini-3-pro-preview",
+    "google-antigravity/gemini-3-pro-high",
+    "github-copilot/gemini-3.1-pro-preview",
+    "openai-codex/gpt-5.3-codex",
+    "github-copilot/claude-opus-4.6",
+    "google-antigravity/claude-opus-4-6-thinking"
   ],
   "packages": [
     {
       "source": "git:github.com/mitsuhiko/agent-stuff",
       "extensions": [
         "-pi-extensions/files.ts",
-        "-pi-extensions/loop.ts"
+        "-pi-extensions/loop.ts",
+        "-pi-extensions/go-to-bed.ts"
       ],
       "skills": [
         "-skills/web-browser/SKILL.md",
-        "-skills/openscad/SKILL.md"
+        "-skills/openscad/SKILL.md",
+        "-skills/apple-mail/SKILL.md"
+      ],
+      "themes": [
+        "+pi-themes/nightowl.json"
       ]
     }
+  ],
+  "extensions": [
+    "-extensions/antigravity-quota.ts",
+    "-extensions/copilot-quota.ts"
   ]
 }
