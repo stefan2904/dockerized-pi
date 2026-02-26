@@ -1,10 +1,10 @@
 {
-  "lastChangelogVersion": "0.54.2",
+  "lastChangelogVersion": "0.55.1",
   "theme": "light",
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-5.3-codex",
   "defaultThinkingLevel": "high",
-  "hideThinkingBlock": true,
+  "hideThinkingBlock": false,
   "shellPath": "/bin/zsh",
   "shellCommandPrefix": "setopt aliases\nsource ~/.zshrc",
   "images": {
@@ -13,23 +13,21 @@
   "editorPaddingX": 0,
   "collapseChangelog": true,
   "enabledModels": [
-    "kilo-code/openrouter/free",
     "kilo-code/minimax/minimax-m2.5:free",
     "kilo-code/deepseek/deepseek-r1-0528",
     "kilo-code/openai/gpt-oss-120b",
-    "google-antigravity/gemini-3-flash",
-    "google-gemini-cli/gemini-3-flash-preview",
     "github-copilot/gemini-3-flash-preview",
-    "github-copilot/gpt-5.2",
-    "openai-codex/gpt-5.3-codex-spark",
-    "kilo-code/z-ai/glm-5:free",
+    "kilo-code/z-ai/glm-5",
     "github-copilot/gemini-3-pro-preview",
-    "google-gemini-cli/gemini-3-pro-preview",
-    "google-antigravity/gemini-3-pro-high",
     "github-copilot/gemini-3.1-pro-preview",
-    "openai-codex/gpt-5.3-codex",
     "github-copilot/claude-opus-4.6",
-    "google-antigravity/claude-opus-4-6-thinking"
+    "openai-codex/gpt-5.3-codex-spark",
+    "openai-codex/gpt-5.3-codex",
+    "google-antigravity/claude-opus-4-6-thinking",
+    "google-antigravity/claude-sonnet-4-5-thinking",
+    "google-antigravity/gemini-3-flash",
+    "google-antigravity/gemini-3-pro-high",
+    "google-antigravity/gemini-3-pro-low"
   ],
   "packages": [
     {
