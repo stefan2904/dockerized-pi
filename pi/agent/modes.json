@@ -8,13 +8,13 @@
       "thinkingLevel": "high"
     },
     "fast": {
-      "provider": "github-copilot",
-      "modelId": "gemini-3-flash-preview",
+      "provider": "google-antigravity",
+      "modelId": "gemini-3-flash",
       "thinkingLevel": "medium"
     },
     "opus": {
-      "provider": "github-copilot",
-      "modelId": "claude-opus-4.6",
+      "provider": "google-antigravity",
+      "modelId": "claude-opus-4-6-thinking",
       "thinkingLevel": "high"
     }
   }
