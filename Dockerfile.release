@@ -25,12 +25,14 @@ RUN usermod -aG sudo pi
 
 # Install python stuff
 ENV UV_PYTHON_INSTALL_DIR=/usr/local/python
+ENV UV_TOOL_DIR=/usr/local/uv-tools
+ENV UV_TOOL_BIN_DIR=/usr/local/bin
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 RUN uv python install --default && \
     ln -sf $(uv python find) /usr/local/bin/python3 && \
     ln -sf /usr/local/bin/python3 /usr/local/bin/python && \
     uv tool install autopep8 && \
-    uv pip install --system pytest
+    uv tool install pytest
 
 # Install ghcli
 RUN (mkdir -p /usr/share/keyrings && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | tee /usr/share/keyrings/githubcli-archive-keyring.gpg > /dev/null) && \
