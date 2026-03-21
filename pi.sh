@@ -224,6 +224,8 @@ fi
 INTERACTIVE_FLAGS=""
 if [ -t 0 ] && [ -t 1 ]; then
     INTERACTIVE_FLAGS="-it"
+else
+    >&2 echo "INFO: Runnin in non-interactive mode."
 fi
 
 docker run --rm $INTERACTIVE_FLAGS \
