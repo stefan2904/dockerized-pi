@@ -197,13 +197,13 @@ fi
 # Matches logic in session-manager.js: cwd.replace(/^[/\\]/, "").replace(/[/\\:]/g, "-")
 CWD_SAFE=$(echo "$PROJECT_ROOT" | sed 's|^[/\\]||' | sed 's|[/\\:]|-|g')
 SESSION_DIR="/home/pi/.pi/agent/sessions/--${CWD_SAFE}--"
-SESSION_DIR_CMD="--session-dir $SESSION_DIR"
+SESSION_DIR_CMD=(--session-dir "$SESSION_DIR")
 
 # If first arg is a command, don't use TOOLS or SESSION_DIR_CMD
 case "$1" in
     install|remove|update|list|config)
         TOOLS=""
-        SESSION_DIR_CMD=""
+        SESSION_DIR_CMD=()
         ;;
 esac
 
@@ -245,4 +245,4 @@ docker run --rm $INTERACTIVE_FLAGS \
   ${OPENROUTER_API_KEY:+-e OPENROUTER_API_KEY} \
   ${PI_CACHE_RETENTION:+-e PI_CACHE_RETENTION} \
   --env-file "$SCRIPT_DIR/.env" $DEBUGFLAGS \
-  pi-coding-agent $TOOLS $SESSION_DIR_CMD "${@}"
+  pi-coding-agent $TOOLS "${SESSION_DIR_CMD[@]}" "${@}"
