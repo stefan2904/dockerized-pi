@@ -45,7 +45,8 @@
       "themes": [
         "+pi-themes/nightowl.json"
       ]
-    }
+    },
+    "git:github.com/lucasmeijer/pi-terminal-signals"
   ],
   "extensions": [
     "-extensions/antigravity-quota.ts",
