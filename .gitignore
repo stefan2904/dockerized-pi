@@ -14,5 +14,7 @@ pi/agent/auth.json
 pi/agent/sessions/*
 pi/agent/sessions/logs/*
 
+.cache
+
 # OS generated files
 .DS_Store
