@@ -22,24 +22,34 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zsh git wget curl jq tree file sudo gosu ripgrep && \
     rm -rf /var/lib/apt/lists/*
 
-# Install additional networking/debugging CLIs
-ARG XH_VERSION=0.25.3
-ARG GRPCURL_VERSION=1.9.3
-ARG WEBSOCAT_VERSION=1.14.1
+# Install additional networking/debugging CLIs (latest releases)
 RUN set -eux; \
     arch="$(dpkg --print-architecture)"; \
     case "$arch" in \
-        amd64) xh_arch="x86_64-unknown-linux-musl"; grpcurl_arch="linux_x86_64"; websocat_arch="x86_64-unknown-linux-musl" ;; \
-        arm64) xh_arch="aarch64-unknown-linux-musl"; grpcurl_arch="linux_arm64"; websocat_arch="aarch64-unknown-linux-musl" ;; \
+        amd64) xh_suffix="-x86_64-unknown-linux-musl.tar.gz"; grpcurl_suffix="_linux_x86_64.tar.gz"; websocat_name="websocat.x86_64-unknown-linux-musl" ;; \
+        arm64) xh_suffix="-aarch64-unknown-linux-musl.tar.gz"; grpcurl_suffix="_linux_arm64.tar.gz"; websocat_name="websocat.aarch64-unknown-linux-musl" ;; \
         *) echo "Unsupported architecture: $arch" >&2; exit 1 ;; \
     esac; \
-    curl -fsSL "https://github.com/ducaale/xh/releases/download/v${XH_VERSION}/xh-v${XH_VERSION}-${xh_arch}.tar.gz" | tar -xz -C /tmp; \
-    install -m 0755 "/tmp/xh-v${XH_VERSION}-${xh_arch}/xh" /usr/local/bin/xh; \
-    curl -fsSL "https://github.com/fullstorydev/grpcurl/releases/download/v${GRPCURL_VERSION}/grpcurl_${GRPCURL_VERSION}_${grpcurl_arch}.tar.gz" | tar -xz -C /tmp grpcurl; \
-    install -m 0755 /tmp/grpcurl /usr/local/bin/grpcurl; \
-    curl -fsSL -o /tmp/websocat "https://github.com/vi/websocat/releases/download/v${WEBSOCAT_VERSION}/websocat.${websocat_arch}"; \
-    install -m 0755 /tmp/websocat /usr/local/bin/websocat; \
-    rm -rf "/tmp/xh-v${XH_VERSION}-${xh_arch}" /tmp/grpcurl /tmp/websocat
+    tmpdir="$(mktemp -d)"; \
+    xh_url="$(curl -fsSL https://api.github.com/repos/ducaale/xh/releases/latest | jq -r --arg suffix "$xh_suffix" '.assets[] | select(.name | endswith($suffix)) | .browser_download_url' | head -n1)"; \
+    test -n "$xh_url"; \
+    curl -fsSL "$xh_url" -o "$tmpdir/xh.tar.gz"; \
+    tar -xzf "$tmpdir/xh.tar.gz" -C "$tmpdir"; \
+    xh_bin="$(find "$tmpdir" -type f -name xh -print -quit)"; \
+    test -n "$xh_bin"; \
+    install -m 0755 "$xh_bin" /usr/local/bin/xh; \
+    grpcurl_url="$(curl -fsSL https://api.github.com/repos/fullstorydev/grpcurl/releases/latest | jq -r --arg suffix "$grpcurl_suffix" '.assets[] | select(.name | endswith($suffix)) | .browser_download_url' | head -n1)"; \
+    test -n "$grpcurl_url"; \
+    curl -fsSL "$grpcurl_url" -o "$tmpdir/grpcurl.tar.gz"; \
+    tar -xzf "$tmpdir/grpcurl.tar.gz" -C "$tmpdir"; \
+    grpcurl_bin="$(find "$tmpdir" -type f -name grpcurl -print -quit)"; \
+    test -n "$grpcurl_bin"; \
+    install -m 0755 "$grpcurl_bin" /usr/local/bin/grpcurl; \
+    websocat_url="$(curl -fsSL https://api.github.com/repos/vi/websocat/releases/latest | jq -r --arg name "$websocat_name" '.assets[] | select(.name == $name) | .browser_download_url' | head -n1)"; \
+    test -n "$websocat_url"; \
+    curl -fsSL "$websocat_url" -o /usr/local/bin/websocat; \
+    chmod 0755 /usr/local/bin/websocat; \
+    rm -rf "$tmpdir"
 
 # Allow pi user to use sudo with a password
 RUN usermod -aG sudo pi
