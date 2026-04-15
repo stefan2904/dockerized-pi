@@ -19,34 +19,38 @@ RUN if [ -n "$UID" ] && [ -n "$GID" ]; then \
 
 # Install stuff
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    zsh git wget curl jq tree file sudo gosu ripgrep && \
+    zsh git wget curl jq tree file sudo gosu ripgrep ca-certificates && \
+    update-ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
 # Install additional networking/debugging CLIs (latest releases)
 RUN set -eux; \
     arch="$(dpkg --print-architecture)"; \
     case "$arch" in \
-        amd64) xh_suffix="-x86_64-unknown-linux-musl.tar.gz"; grpcurl_suffix="_linux_x86_64.tar.gz"; websocat_name="websocat.x86_64-unknown-linux-musl" ;; \
-        arm64) xh_suffix="-aarch64-unknown-linux-musl.tar.gz"; grpcurl_suffix="_linux_arm64.tar.gz"; websocat_name="websocat.aarch64-unknown-linux-musl" ;; \
+        amd64) xh_arch="x86_64-unknown-linux-musl"; grpcurl_arch="linux_x86_64"; websocat_arch="x86_64-unknown-linux-musl" ;; \
+        arm64) xh_arch="aarch64-unknown-linux-musl"; grpcurl_arch="linux_arm64"; websocat_arch="aarch64-unknown-linux-musl" ;; \
         *) echo "Unsupported architecture: $arch" >&2; exit 1 ;; \
     esac; \
     tmpdir="$(mktemp -d)"; \
-    xh_url="$(curl -fsSL https://api.github.com/repos/ducaale/xh/releases/latest | jq -r --arg suffix "$xh_suffix" '.assets[] | select(.name | endswith($suffix)) | .browser_download_url' | head -n1)"; \
-    test -n "$xh_url"; \
+    xh_effective_url="$(curl -fsSL -o /dev/null -w '%{url_effective}' https://github.com/ducaale/xh/releases/latest)"; \
+    grpcurl_effective_url="$(curl -fsSL -o /dev/null -w '%{url_effective}' https://github.com/fullstorydev/grpcurl/releases/latest)"; \
+    websocat_effective_url="$(curl -fsSL -o /dev/null -w '%{url_effective}' https://github.com/vi/websocat/releases/latest)"; \
+    case "$xh_effective_url" in */releases/tag/*) xh_tag="${xh_effective_url##*/}" ;; *) echo "Could not resolve latest xh tag from $xh_effective_url" >&2; exit 1 ;; esac; \
+    case "$grpcurl_effective_url" in */releases/tag/*) grpcurl_tag="${grpcurl_effective_url##*/}" ;; *) echo "Could not resolve latest grpcurl tag from $grpcurl_effective_url" >&2; exit 1 ;; esac; \
+    case "$websocat_effective_url" in */releases/tag/*) websocat_tag="${websocat_effective_url##*/}" ;; *) echo "Could not resolve latest websocat tag from $websocat_effective_url" >&2; exit 1 ;; esac; \
+    xh_url="https://github.com/ducaale/xh/releases/download/${xh_tag}/xh-${xh_tag}-${xh_arch}.tar.gz"; \
+    grpcurl_url="https://github.com/fullstorydev/grpcurl/releases/download/${grpcurl_tag}/grpcurl_${grpcurl_tag#v}_${grpcurl_arch}.tar.gz"; \
+    websocat_url="https://github.com/vi/websocat/releases/download/${websocat_tag}/websocat.${websocat_arch}"; \
     curl -fsSL "$xh_url" -o "$tmpdir/xh.tar.gz"; \
     tar -xzf "$tmpdir/xh.tar.gz" -C "$tmpdir"; \
     xh_bin="$(find "$tmpdir" -type f -name xh -print -quit)"; \
     test -n "$xh_bin"; \
     install -m 0755 "$xh_bin" /usr/local/bin/xh; \
-    grpcurl_url="$(curl -fsSL https://api.github.com/repos/fullstorydev/grpcurl/releases/latest | jq -r --arg suffix "$grpcurl_suffix" '.assets[] | select(.name | endswith($suffix)) | .browser_download_url' | head -n1)"; \
-    test -n "$grpcurl_url"; \
     curl -fsSL "$grpcurl_url" -o "$tmpdir/grpcurl.tar.gz"; \
     tar -xzf "$tmpdir/grpcurl.tar.gz" -C "$tmpdir"; \
     grpcurl_bin="$(find "$tmpdir" -type f -name grpcurl -print -quit)"; \
     test -n "$grpcurl_bin"; \
     install -m 0755 "$grpcurl_bin" /usr/local/bin/grpcurl; \
-    websocat_url="$(curl -fsSL https://api.github.com/repos/vi/websocat/releases/latest | jq -r --arg name "$websocat_name" '.assets[] | select(.name == $name) | .browser_download_url' | head -n1)"; \
-    test -n "$websocat_url"; \
     curl -fsSL "$websocat_url" -o /usr/local/bin/websocat; \
     chmod 0755 /usr/local/bin/websocat; \
     rm -rf "$tmpdir"
