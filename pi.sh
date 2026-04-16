@@ -107,7 +107,7 @@ fi
 # --update flag
 if [ "$DO_UPDATE" = true ]; then
     cd "$SCRIPT_DIR"
-    CURRENT_VERSION=$(./pi.sh --version </dev/null)
+    CURRENT_VERSION=$(./build.sh --installed-version)
     LATEST_VERSION=$(curl -s https://registry.npmjs.org/@mariozechner/pi-coding-agent/latest | jq -r .version)
 
     >&2 echo "Latest pi version:            $LATEST_VERSION"
@@ -124,7 +124,7 @@ if [ "$DO_UPDATE" = true ]; then
     >&2 echo "Updating configured packages ..."
     ./pi.sh update
 
-    UPDATED_VERSION=$(./pi.sh --version </dev/null)
+    UPDATED_VERSION=$(./build.sh --installed-version)
     >&2 echo "Updated to pi version: $UPDATED_VERSION"
 
     if [ "$UPDATED_VERSION" != "$LATEST_VERSION" ]; then
