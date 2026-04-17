@@ -27,20 +27,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN set -eux; \
     arch="$(dpkg --print-architecture)"; \
     case "$arch" in \
-        amd64) xh_arch="x86_64-unknown-linux-musl"; grpcurl_arch="linux_x86_64"; websocat_arch="x86_64-unknown-linux-musl" ;; \
-        arm64) xh_arch="aarch64-unknown-linux-musl"; grpcurl_arch="linux_arm64"; websocat_arch="aarch64-unknown-linux-musl" ;; \
+        amd64) xh_arch="x86_64-unknown-linux-musl"; grpcurl_arch="linux_x86_64"; websocat_arch="x86_64-unknown-linux-musl"; glab_arch="amd64" ;; \
+        arm64) xh_arch="aarch64-unknown-linux-musl"; grpcurl_arch="linux_arm64"; websocat_arch="aarch64-unknown-linux-musl"; glab_arch="arm64" ;; \
         *) echo "Unsupported architecture: $arch" >&2; exit 1 ;; \
     esac; \
     tmpdir="$(mktemp -d)"; \
     xh_effective_url="$(curl -fsSL -o /dev/null -w '%{url_effective}' https://github.com/ducaale/xh/releases/latest)"; \
     grpcurl_effective_url="$(curl -fsSL -o /dev/null -w '%{url_effective}' https://github.com/fullstorydev/grpcurl/releases/latest)"; \
     websocat_effective_url="$(curl -fsSL -o /dev/null -w '%{url_effective}' https://github.com/vi/websocat/releases/latest)"; \
+    glab_effective_url="$(curl -fsSL -o /dev/null -w '%{url_effective}' https://gitlab.com/gitlab-org/cli/-/releases/permalink/latest)"; \
     case "$xh_effective_url" in */releases/tag/*) xh_tag="${xh_effective_url##*/}" ;; *) echo "Could not resolve latest xh tag from $xh_effective_url" >&2; exit 1 ;; esac; \
     case "$grpcurl_effective_url" in */releases/tag/*) grpcurl_tag="${grpcurl_effective_url##*/}" ;; *) echo "Could not resolve latest grpcurl tag from $grpcurl_effective_url" >&2; exit 1 ;; esac; \
     case "$websocat_effective_url" in */releases/tag/*) websocat_tag="${websocat_effective_url##*/}" ;; *) echo "Could not resolve latest websocat tag from $websocat_effective_url" >&2; exit 1 ;; esac; \
+    case "$glab_effective_url" in */-/releases/v*) glab_tag="${glab_effective_url##*/}" ;; *) echo "Could not resolve latest glab tag from $glab_effective_url" >&2; exit 1 ;; esac; \
     xh_url="https://github.com/ducaale/xh/releases/download/${xh_tag}/xh-${xh_tag}-${xh_arch}.tar.gz"; \
     grpcurl_url="https://github.com/fullstorydev/grpcurl/releases/download/${grpcurl_tag}/grpcurl_${grpcurl_tag#v}_${grpcurl_arch}.tar.gz"; \
     websocat_url="https://github.com/vi/websocat/releases/download/${websocat_tag}/websocat.${websocat_arch}"; \
+    glab_version="${glab_tag#v}"; \
+    glab_url="https://gitlab.com/gitlab-org/cli/-/releases/${glab_tag}/downloads/glab_${glab_version}_linux_${glab_arch}.tar.gz"; \
     curl -fsSL "$xh_url" -o "$tmpdir/xh.tar.gz"; \
     tar -xzf "$tmpdir/xh.tar.gz" -C "$tmpdir"; \
     xh_bin="$(find "$tmpdir" -type f -name xh -print -quit)"; \
@@ -53,6 +57,11 @@ RUN set -eux; \
     install -m 0755 "$grpcurl_bin" /usr/local/bin/grpcurl; \
     curl -fsSL "$websocat_url" -o /usr/local/bin/websocat; \
     chmod 0755 /usr/local/bin/websocat; \
+    curl -fsSL "$glab_url" -o "$tmpdir/glab.tar.gz"; \
+    tar -xzf "$tmpdir/glab.tar.gz" -C "$tmpdir"; \
+    glab_bin="$(find "$tmpdir" -type f -name glab -print -quit)"; \
+    test -n "$glab_bin"; \
+    install -m 0755 "$glab_bin" /usr/local/bin/glab; \
     rm -rf "$tmpdir"
 
 # Allow pi user to use sudo with a password
