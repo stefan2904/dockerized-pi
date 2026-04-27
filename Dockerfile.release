@@ -17,9 +17,16 @@ RUN if [ -n "$UID" ] && [ -n "$GID" ]; then \
         useradd -r -g pi -m -d /home/pi pi; \
     fi
 
-# Install stuff
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    zsh git wget curl jq tree file sudo gosu ripgrep ca-certificates && \
+# Install stuff (including pi-chat runtime deps: tmux + qemu)
+RUN set -eux; \
+    arch="$(dpkg --print-architecture)"; \
+    case "$arch" in \
+        amd64) qemu_pkg="qemu-system-x86" ;; \
+        arm64) qemu_pkg="qemu-system-arm" ;; \
+        *) echo "Unsupported architecture for pi-chat dependencies: $arch" >&2; exit 1 ;; \
+    esac; \
+    apt-get update && apt-get install -y --no-install-recommends \
+    zsh git wget curl jq tree file sudo gosu ripgrep ca-certificates tmux qemu-utils "$qemu_pkg" && \
     update-ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
