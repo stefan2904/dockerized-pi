@@ -162,6 +162,7 @@ fi
 
 # map cache dirs used by my pi
 mkdir -p "$SCRIPT_DIR/.cache/checkouts"
+mkdir -p "$SCRIPT_DIR/.cache/gondolin/images"
 
 
 DEBUGFLAGS=""
@@ -235,6 +236,7 @@ docker run --rm $INTERACTIVE_FLAGS \
   -v "$PROJECT_ROOT":/workspace:$MOUNT_MODE \
   -v "$SCRIPT_DIR/pi":/home/pi/.pi:rw \
   -v "$SCRIPT_DIR/.cache/checkouts":/home/pi/.cache/checkouts:rw \
+  -v "$SCRIPT_DIR/.cache/gondolin":/home/pi/.cache/gondolin:rw \
   -w "/workspace/$REL_PATH" \
   -e PI_PROJECT_ROOT="$PROJECT_ROOT" \
   -e PI_MOUNT_MODE="$MOUNT_MODE" \
