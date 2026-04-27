@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "0.68.0",
+  "lastChangelogVersion": "0.70.2",
   "theme": "light",
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-5.3-codex",
@@ -13,7 +13,7 @@
   "editorPaddingX": 0,
   "collapseChangelog": true,
   "enabledModels": [
-    "kilo-code/minimax/minimax-m2.5:free",
+    "kilo-code/minimax/minimax-m2.5",
     "kilo-code/deepseek/deepseek-r1-0528",
     "kilo-code/openai/gpt-oss-120b",
     "github-copilot/gemini-3-flash-preview",
@@ -26,8 +26,7 @@
     "google-antigravity/claude-opus-4-6-thinking",
     "google-antigravity/claude-sonnet-4-5-thinking",
     "google-antigravity/gemini-3-flash",
-    "google-antigravity/gemini-3-pro-high",
-    "google-antigravity/gemini-3-pro-low"
+    "openai-codex/gpt-5.5"
   ],
   "packages": [
     {
