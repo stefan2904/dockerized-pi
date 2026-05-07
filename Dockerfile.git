@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y zsh git python3 make g++ && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
-RUN git clone --depth 1 https://github.com/badlogic/pi-mono.git .
+RUN git clone --depth 1 https://github.com/earendil-works/pi-mono.git .
 
 # Set version suffix to -git for the coding agent
 RUN cd packages/coding-agent && \
@@ -20,7 +20,7 @@ RUN cd packages/agent && npm run build
 RUN cd packages/coding-agent && npm run build
 
 # Create a tarball of the coding-agent
-RUN cd packages/coding-agent && npm pack && mv mariozechner-pi-coding-agent-*.tgz /pi-coding-agent.tgz
+RUN cd packages/coding-agent && npm pack && mv earendil-works-pi-coding-agent-*.tgz /pi-coding-agent.tgz
 
 # Final stage
 FROM node:current-trixie-slim

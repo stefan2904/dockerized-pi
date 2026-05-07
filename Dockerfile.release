@@ -95,7 +95,7 @@ RUN (mkdir -p /usr/share/keyrings && curl -fsSL https://cli.github.com/packages/
 
 # Install pi coding agent (as root)
 ARG VERSION=latest
-RUN npm install -g @mariozechner/pi-coding-agent@$VERSION && \
+RUN npm install -g @earendil-works/pi-coding-agent@$VERSION && \
     npm cache clean --force
 
 # Set up workspace
