@@ -1,84 +1,188 @@
 * 🐳 dockerized-pi
 
-/"There are many coding agents dockerizations, but this one is mine."/
+/"There are many coding agent dockerizations, but this one is mine."/
 
-Dockerfiles and scripts to containerize the [[https://github.com/badlogic/pi-mono][pi]] [[https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent][coding agent]].
-Includes various helpers and opinionated customizations.
+Dockerfiles, launcher scripts, and a pre-populated =~/.pi= configuration for running the [[https://github.com/earendil-works/pi-mono/tree/main/packages/coding-agent][Pi coding agent]] in Docker.
 
------
-
-** 🚀 Setup 
-
-1. *📥 Clone the Repository*:
-   #+begin_src bash
-   git clone https://github.com/stefan2904/dockerized-pi.git
-   cd dockerized-pi
-   #+end_src
-
-2. *⚙️ Configure Environment (Optional)*: Copy ~.env.template~ to ~.env~ and fill in your configuration.
-   #+begin_src bash
-   cp .env.template .env
-   #+end_src
-   /Note:/ This is optional. You can also log in to model providers directly within the agent using the ~/login~ command.
-
-3. *🏗️ Build the Image*: Run the build script to create/update the ~pi-coding-agent~ Docker image.
-   #+begin_src bash
-   ./build.sh [version]
-   #+end_src
-   /Note:/ If no version is specified, it defaults to ~latest~.
-
-4. *🐚 (Optional) Install Zsh Aliases*: Install the ~pi~, ~pic~, and ~picommit~ aliases for easy access from any directory.
-   #+begin_src bash
-   ./pi.sh --install
-   #+end_src
-   /Note:/ This adds aliases to ~/.zshrc.local~. Ensure this file is sourced in your ~/.zshrc~.
-
-** 📋 Environment Variables
-
-The following environment variables can be configured in ~.env~ (see ~.env.template~):
-- ~BOT_GH_TOKEN~: GitHub personal access token (for ~gh~ CLI authentication).
-- ~BOT_SENTRY_TOKEN~: Sentry auth token (for ~sentry-cli~ authentication). Get one at [[https://turing-6b.sentry.io/settings/account/api/auth-tokens/][Sentry Personal Tokens]].
-- ~BOT_GIT_NAME~: Git user name (for changes done in the container/by pi).
-- ~BOT_GIT_EMAIL~: Git user email (for changes done in the container/by pi).
-- ~PI_SUDO_PASSWORD~: Password for ~sudo~ inside the container. If not set, a random password is generated and displayed at startup.
-- ~ANTHROPIC_API_KEY~: Anthropic API key.
-- ~OPENAI_API_KEY~: OpenAI API key.
-- ~GEMINI_API_KEY~: Google Gemini API key.
-- ~MISTRAL_API_KEY~: Mistral API key.
-- ~HF_TOKEN~: Hugging Face API token.
-- ~OPENROUTER_API_KEY~: OpenRouter API key.
-- ~PI_CACHE_RETENTION~: Cache retention period (e.g., ~7d~).
-
-** 📜 Dockerize Scripts (use ~pi~ alias or run from repo root)
-
-- ~./pi.sh --install~: Install ~pi~, ~pic~, and ~picommit~ aliases.
-- ~./pi.sh --update~: Update the pi agent to the latest version and rebuild the image.
-- ~./pi.sh --sessions~: List past sessions stored in ~pi/agent/sessions~.
-- ~./pi.sh --ro~ or ~--readonly~: Mount the workspace in read-only mode.
-- ~./pi.sh <args>~: Run ~pi~ with the given arguments inside the container (see ~./pi.sh --help~).
-
-** ⌨️ Pi Aliases
-
-Once installed, use these from any project directory:
-- ~pi~: Run the agent in the current directory.
-- ~pic~: Continue the last session (~pi --continue~).
-- ~picommit~: Automatically stage and commit changes using the ~/commit~ template.
+The repository is intentionally opinionated: it keeps Pi sessions and configuration outside your project checkout, mounts the detected project root into the container, and ships helper extensions, prompt templates, skills, and CLI tooling that are useful for day-to-day coding-agent work.
 
 -----
 
-** ✨ Features
+** 🚀 Quick start
 
-*** 🗂️ Project Root Discovery
+#+begin_src bash
+git clone https://github.com/stefan2904/dockerized-pi.git
+cd dockerized-pi
 
-The ~pi.sh~ script automatically detects your project root by searching upwards for ~.git~, ~.project~, or ~.projectile~ markers. This ensures that session history and file contexts are consistently mapped even if you run ~pi~ from a subdirectory.
+# Optional: add provider tokens and bot identity
+cp .env.template .env
+$EDITOR .env
 
-*** 🐚 Shell Environment
+# Build the Docker image (defaults to the latest Pi release)
+./build.sh
 
-The container uses ~zsh~ with the excellent [[https://grml.org/zsh/][grml configuration]], providing a powerful and interactive shell environment for the agent (and you).
+# Run Pi against the current directory/repository
+./pi.sh
+#+end_src
 
-*** 🔐 Sudo Support
+You can also authenticate providers inside Pi with ~/login~ instead of putting API keys in =.env=.
 
-The ~pi~ user can gain root privileges via ~sudo~. The password is configurable through the ~PI_SUDO_PASSWORD~ environment variable (set it in ~.env~). If not set, a random 16-character hex password is generated at container startup and printed to the console:
+** 📦 Requirements
+
+- Docker
+- Git
+- A POSIX shell (the scripts are Bash/sh)
+- Optional for =./pi.sh --update=: =curl= and =jq= on the host
+
+The image is built with the host UID/GID so files created by the agent remain owned by your local user.
+
+** 🏗️ Building
+
+#+begin_src bash
+./build.sh              # build pi-coding-agent:latest
+./build.sh 0.74.0       # build a specific @earendil-works/pi-coding-agent version
+./build.sh --installed-version
+#+end_src
+
+The default build uses =Dockerfile.release= and installs Pi from npm. =Dockerfile.git= is kept as an alternate source-build Dockerfile for development/testing.
+
+The release image includes:
+- Node.js on Debian Trixie slim
+- zsh with grml defaults
+- git, GitHub CLI (=gh=), GitLab CLI (=glab=), Sentry CLI
+- curl, wget, jq, ripgrep, tree, file
+- sudo/gosu with a configurable =pi= user password
+- tmux and QEMU utilities used by Pi features
+- Python via =uv= plus =autopep8=, =pytest=, and =mitmproxy=
+- Networking/debugging CLIs: =xh=, =grpcurl=, =websocat=
+
+** 🐚 Running Pi
+
+Use =./pi.sh [options] [pi arguments...]= from any directory. The launcher discovers the project root by walking up from =$PWD= until it finds =.git=, =.project=, or =.projectile=, then mounts that root at =/workspace=.
+
+#+begin_src bash
+./pi.sh                              # interactive Pi in the current project
+./pi.sh --continue                   # continue the latest session
+./pi.sh --ro                         # read-only workspace mount
+./pi.sh -p "summarize this repo"      # pass normal Pi CLI args through
+./pi.sh --commit                     # run the /commit prompt template
+./pi.sh --sessions                   # list saved sessions
+./pi.sh --update                     # update Pi and configured packages
+#+end_src
+
+Launcher options:
+
+| Option | Description |
+|--------+-------------|
+| =--install= | Install/update shell aliases: =pi=, =pic=, =picommit=. |
+| =--update= | Build the latest Pi release and run =pi update=. |
+| =--sessions= | Show recent session files under =pi/agent/sessions=. |
+| =--ro=, =--readonly= | Mount the workspace read-only and expose only read/search/list tools. |
+| =--commit= | Invoke the checked-in =/commit= prompt, optionally using =PI_FAST_PROVIDER=/=PI_FAST_MODEL=. |
+
+If a project contains a =.pi_ro= file, the launcher forces read-only mode for that project.
+
+Pi package-management commands (=install=, =remove=, =update=, =list=, =config=) are passed through without adding tool/session arguments.
+
+** ⌨️ Optional aliases
+
+#+begin_src bash
+./pi.sh --install
+#+end_src
+
+This writes aliases to the first existing file among =~/.zshrc.local=, =~/.zshrc=, and =~/.bashrc=:
+
+- =pi= → run the agent in the current directory
+- =pic= → continue the last session (=pi --continue=)
+- =picommit= → run =pi --commit=
+
+** 📋 Environment variables
+
+Copy =.env.template= to =.env= and set only what you need. The file is passed to Docker with =--env-file= and is ignored by git.
+
+| Variable | Purpose |
+|----------+---------|
+| =BOT_GH_TOKEN= | GitHub token used to authenticate =gh= inside the container. |
+| =BOT_GIT_NAME= | Git author name configured inside the container. |
+| =BOT_GIT_EMAIL= | Git author email configured inside the container. |
+| =BOT_SENTRY_TOKEN= | Sentry CLI auth token. |
+| =PI_FAST_PROVIDER= | Provider used by =./pi.sh --commit= when =PI_FAST_MODEL= is set. |
+| =PI_FAST_MODEL= | Model used by =./pi.sh --commit=. |
+| =PI_SUDO_PASSWORD= | Password for sudo as the =pi= user. If empty, a random password is printed at startup. |
+| =PI_CACHE_RETENTION= | Pi prompt-cache retention setting, for example =7d=. |
+| =ANTHROPIC_API_KEY= | Anthropic API key. |
+| =OPENAI_API_KEY= | OpenAI API key. |
+| =GEMINI_API_KEY= | Google Gemini API key. |
+| =MISTRAL_API_KEY= | Mistral API key. |
+| =HF_TOKEN= | Hugging Face token. |
+| =OPENROUTER_API_KEY= | OpenRouter API key. |
+
+Additional provider-specific variables can be added to =.env= as needed. For example, the bundled Kilo Code provider extension expects =KILO_API_KEY= if you use =kilo-code= models.
+
+** 🗂️ Repository layout
+
+#+begin_example
+.
+├── build.sh                 # docker build helper
+├── pi.sh                    # launcher/alias installer/update helper
+├── Dockerfile.release       # npm-release based image
+├── Dockerfile.git           # source-build image variant
+├── entrypoint.sh            # container setup, auth, sudo, then exec pi
+├── .env.template            # optional host/container environment
+├── examples.org             # example projects created with this setup
+└── pi/                      # mounted as /home/pi/.pi in the container
+    └── agent/
+        ├── settings.json    # Pi settings and packages
+        ├── models.json      # local/custom providers (Ollama, LM Studio, ...)
+        ├── modes.json       # named model/provider modes
+        ├── extensions/      # custom commands/tools/providers
+        ├── prompts/         # prompt templates such as /commit
+        └── skills/          # bundled skills
+#+end_example
+
+Runtime state is stored below =pi/agent= and ignored where appropriate:
+- =pi/agent/auth.json= for OAuth/provider logins
+- =pi/agent/sessions/= for session history
+- =pi/agent/git/= for installed git packages
+- =.cache/checkouts= and =.cache/gondolin= for reusable caches
+
+Do not commit secrets or generated runtime state.
+
+** ✨ Bundled Pi customizations
+
+*** Prompt templates
+
+- =/commit= — stage and commit changes with a conventional commit message.
+
+*** Extensions and commands
+
+- =/files-changed= — list files read/written/edited in the active session branch and open selections in VS Code.
+- =/quota= — consolidated quota view for logged-in providers such as GitHub Copilot, Google Antigravity/Gemini CLI, and OpenAI Codex.
+- Legacy per-provider quota extensions are included for Antigravity and GitHub Copilot, but are disabled in favor of =/quota= by the current settings.
+- =/kilo-refresh-models= — refresh the Kilo Code model catalog.
+- =/kilo-list-free-models= — list currently free Kilo Code models.
+- Project status footer — shows host project root, host name, and read-only mode state.
+
+*** Custom tools exposed to the model
+
+- =get_files_changed= — report files touched in the active session branch.
+- =get_gemini_cli_quota= — fetch Gemini CLI quota/model availability.
+- =get_openai_codex_quota= — probe OpenAI Codex quota headers and plan details.
+- Legacy disabled quota extensions also provide =get_antigravity_quota= and =get_copilot_quota= if re-enabled.
+
+*** Custom model/provider setup
+
+- =pi/agent/models.json= defines local OpenAI-compatible providers for Ollama and LM Studio at =host.docker.internal=.
+- The Kilo Code extension dynamically registers the =kilo-code= provider from Kilo's gateway.
+- =pi/agent/modes.json= contains named model modes for quick switching.
+
+*** Skills
+
+- =git-autopep8= — format only changed Python lines with =autopep8=.
+
+** 🔐 Sudo support
+
+The container starts as root, configures the =pi= user, then drops privileges with =gosu=. If =PI_SUDO_PASSWORD= is unset, a random password is generated and printed:
 
 #+begin_example
 ==========================================
@@ -86,27 +190,11 @@ The ~pi~ user can gain root privileges via ~sudo~. The password is configurable 
 ==========================================
 #+end_example
 
-This allows the agent (or you, when shelling in) to install packages or perform other root operations as needed.
+Set =PI_SUDO_PASSWORD= in =.env= for a stable password.
 
-*** 📝 Prompt Templates
+** 🧭 Notes
 
-- ~/commit~: Automatically stage and commit changes with conventional commit messages.
-
-*** 🧩 Extensions
-
-- ~/files-changed~: Show a list of files read, written, or edited in the current session.
-- ~/quota~: Show usage quotas for all logged-in providers.
-- ~/quota-antigravity~: Show Antigravity usage limits and quotas.
-- ~/quota-copilot~: Show GitHub Copilot usage statistics and quotas.
-
-*** 🧠 Skills
-
-- ~git-autopep8~: Automatically formats changed lines in Python files using ~git~ and ~autopep8~.
-
-*** 🛠️ Tools (Custom)
-
-- ~get_files_changed~: List files touched in the session (available to the model).
-- ~get_antigravity_quota~: Fetch Antigravity usage limits (available to the model).
-- ~get_copilot_quota~: Fetch GitHub Copilot usage limits (available to the model).
-- ~get_gemini_cli_quota~: Fetch Google Gemini CLI tier info and model quota availability.
-- ~get_openai_codex_quota~: Probe OpenAI Codex quota headers and account plan details.
+- The launcher mounts the detected project root as =/workspace= and starts Pi in the matching relative subdirectory.
+- Read-only mode changes both the Docker mount and the active tool list.
+- Provider logins performed with ~/login~ persist in =pi/agent/auth.json= on the host and are ignored by git.
+- Local Ollama/LM Studio endpoints are addressed from inside Docker via =host.docker.internal=.
