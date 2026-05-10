@@ -108,7 +108,7 @@ fi
 if [ "$DO_UPDATE" = true ]; then
     cd "$SCRIPT_DIR"
     CURRENT_VERSION=$(./build.sh --installed-version)
-    LATEST_VERSION=$(curl -s https://registry.npmjs.org/@mariozechner/pi-coding-agent/latest | jq -r .version)
+    LATEST_VERSION=$(curl -s https://registry.npmjs.org/@earendil-works/pi-coding-agent/latest | jq -r .version)
 
     >&2 echo "Latest pi version:            $LATEST_VERSION"
     >&2 echo "Current installed pi version: $CURRENT_VERSION"
