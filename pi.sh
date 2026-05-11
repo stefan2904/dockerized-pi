@@ -7,6 +7,7 @@ TOOLS="--tools read,bash,edit,write,grep,find,ls"
 
 # location of this script
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+ORIGINAL_CWD="$PWD"
 
 
 touch "$SCRIPT_DIR/.env" # if user did not create it based on .env.template
@@ -168,6 +169,7 @@ mkdir -p "$SCRIPT_DIR/.cache/gondolin/images"
 DEBUGFLAGS=""
 #DEBUGFLAGS="--entrypoint zsh"
 # test volumes: ./pi.sh -c 'touch ~/.pi/test'
+EXTRA_VOLUMES=()
 
 
 if [ -f ".pi_ro" ]; then
@@ -178,6 +180,52 @@ fi
 >&2 echo "INFO: Using env file: $SCRIPT_DIR/.env"
 if [ -n "$DEBUGFLAGS" ]; then
     >&2 echo "INFO: docker run flags: $DEBUGFLAGS"
+fi
+
+# Optional per-directory read-only volume mounts.
+# .volumes.yml is expected to contain entries like:
+# - "~/some/project": "~/some/notes"
+VOLUMES_FILE="$SCRIPT_DIR/.volumes.yml"
+if [ -f "$VOLUMES_FILE" ]; then
+    PROJECT_ORG_NOTES=$(python3 - "$VOLUMES_FILE" "$ORIGINAL_CWD" <<'PY'
+import ast
+import os
+import sys
+
+volumes_file, cwd = sys.argv[1], sys.argv[2]
+
+
+def canonicalize(path):
+    return os.path.abspath(os.path.expanduser(path))
+
+
+volumes = {}
+with open(volumes_file, encoding="utf-8") as f:
+    for lineno, line in enumerate(f, 1):
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if not line.startswith("- "):
+            raise SystemExit(f"{volumes_file}:{lineno}: expected '- key: value'")
+        try:
+            item = ast.literal_eval("{" + line[2:] + "}")
+        except Exception as e:
+            raise SystemExit(f"{volumes_file}:{lineno}: could not parse entry: {e}")
+        if not isinstance(item, dict) or len(item) != 1:
+            raise SystemExit(f"{volumes_file}:{lineno}: expected exactly one key/value pair")
+        volumes.update(item)
+
+cwd = canonicalize(cwd)
+for host_cwd, notes_dir in volumes.items():
+    if canonicalize(str(host_cwd)) == cwd:
+        print(canonicalize(str(notes_dir)))
+        break
+PY
+)
+    if [ -n "$PROJECT_ORG_NOTES" ]; then
+        EXTRA_VOLUMES+=(-v "$PROJECT_ORG_NOTES:/workspace/project-org-notes:ro")
+        >&2 echo "INFO: Mounting project org notes read-only: $PROJECT_ORG_NOTES -> /workspace/project-org-notes"
+    fi
 fi
 
 # Find the project root by looking for .git, .project, or .projectile
@@ -237,6 +285,7 @@ docker run --rm $INTERACTIVE_FLAGS \
   -v "$SCRIPT_DIR/pi":/home/pi/.pi:rw \
   -v "$SCRIPT_DIR/.cache/checkouts":/home/pi/.cache/checkouts:rw \
   -v "$SCRIPT_DIR/.cache/gondolin":/home/pi/.cache/gondolin:rw \
+  "${EXTRA_VOLUMES[@]}" \
   -w "/workspace/$REL_PATH" \
   -e PI_PROJECT_ROOT="$PROJECT_ROOT" \
   -e PI_MOUNT_MODE="$MOUNT_MODE" \
