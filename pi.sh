@@ -170,6 +170,7 @@ DEBUGFLAGS=""
 #DEBUGFLAGS="--entrypoint zsh"
 # test volumes: ./pi.sh -c 'touch ~/.pi/test'
 EXTRA_VOLUMES=()
+EXTRA_PI_ARGS=()
 
 
 if [ -f ".pi_ro" ]; then
@@ -224,6 +225,7 @@ PY
 )
     if [ -n "$PROJECT_ORG_NOTES" ]; then
         EXTRA_VOLUMES+=(-v "$PROJECT_ORG_NOTES:/workspace/project-org-notes:ro")
+        EXTRA_PI_ARGS+=(--append-system-prompt "Additional read-only project notes are mounted at /workspace/project-org-notes. Use them when relevant, but do not edit them.")
         >&2 echo "INFO: Mounting project org notes read-only: $PROJECT_ORG_NOTES -> /workspace/project-org-notes"
     fi
 fi
@@ -256,6 +258,7 @@ case "$1" in
     install|remove|update|list|config)
         TOOLS=""
         SESSION_DIR_CMD=()
+        EXTRA_PI_ARGS=()
         ;;
 esac
 
@@ -300,4 +303,4 @@ docker run --rm $INTERACTIVE_FLAGS \
   ${OPENROUTER_API_KEY:+-e OPENROUTER_API_KEY} \
   ${PI_CACHE_RETENTION:+-e PI_CACHE_RETENTION} \
   --env-file "$SCRIPT_DIR/.env" $DEBUGFLAGS \
-  pi-coding-agent $TOOLS "${SESSION_DIR_CMD[@]}" "${@}"
+  pi-coding-agent $TOOLS "${SESSION_DIR_CMD[@]}" "${EXTRA_PI_ARGS[@]}" "${@}"
