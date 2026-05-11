@@ -224,9 +224,9 @@ for host_cwd, notes_dir in volumes.items():
 PY
 )
     if [ -n "$PROJECT_ORG_NOTES" ]; then
-        EXTRA_VOLUMES+=(-v "$PROJECT_ORG_NOTES:/workspace/project-org-notes:ro")
-        EXTRA_PI_ARGS+=(--append-system-prompt "Additional read-only project notes are mounted at /workspace/project-org-notes. Use them when relevant, but do not edit them.")
-        >&2 echo "INFO: Mounting project org notes read-only: $PROJECT_ORG_NOTES -> /workspace/project-org-notes"
+        EXTRA_VOLUMES+=(-v "$PROJECT_ORG_NOTES:/workspace/project-notes:ro")
+        EXTRA_PI_ARGS+=(--append-system-prompt "Additional read-only project notes are mounted at /workspace/project-notes. Use them when relevant, but do not edit them.")
+        >&2 echo "INFO: Mounting project notes read-only: $PROJECT_ORG_NOTES -> /workspace/project-notes"
     fi
 fi
 
