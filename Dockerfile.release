@@ -17,7 +17,7 @@ RUN if [ -n "$UID" ] && [ -n "$GID" ]; then \
         useradd -r -g pi -m -d /home/pi pi; \
     fi
 
-# Install stuff (including pi-chat runtime deps: tmux + qemu)
+# Install stuff (including pi-chat runtime deps: tmux + qemu, and JVM tooling for Gradle/Kotlin)
 RUN set -eux; \
     arch="$(dpkg --print-architecture)"; \
     case "$arch" in \
@@ -26,9 +26,17 @@ RUN set -eux; \
         *) echo "Unsupported architecture for pi-chat dependencies: $arch" >&2; exit 1 ;; \
     esac; \
     apt-get update && apt-get install -y --no-install-recommends \
-    zsh git wget curl jq tree file sudo gosu ripgrep ca-certificates tmux qemu-utils "$qemu_pkg" && \
+    zsh git wget curl jq tree file sudo gosu ripgrep ca-certificates tmux qemu-utils "$qemu_pkg" \
+    openjdk-21-jdk unzip && \
+    ln -s /usr/lib/jvm/java-21-openjdk-* /opt/openjdk-default && \
+    java -version && \
+    javac -version && \
     update-ca-certificates && \
     rm -rf /var/lib/apt/lists/*
+
+# Make Debian's OpenJDK 21 package the default JVM.
+ENV JAVA_HOME=/opt/openjdk-default
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 # Install additional networking/debugging CLIs (latest releases)
 RUN set -eux; \
