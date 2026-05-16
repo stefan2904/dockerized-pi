@@ -33,7 +33,8 @@
       "extensions": [
         "-pi-extensions/files.ts",
         "-pi-extensions/loop.ts",
-        "-pi-extensions/go-to-bed.ts"
+        "-pi-extensions/go-to-bed.ts",
+        "-extensions/go-to-bed.ts"
       ],
       "skills": [
         "-skills/web-browser/SKILL.md",
