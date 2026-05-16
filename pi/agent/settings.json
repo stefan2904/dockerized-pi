@@ -23,9 +23,9 @@
     "github-copilot/gemini-3-flash-preview",
     "github-copilot/claude-opus-4.7",
     "github-copilot/claude-sonnet-4.6",
-    "kilo-code/z-ai/glm-5.1"
+    "kilo-code/z-ai/glm-5.1",
     "kilo-code/deepseek/deepseek-r1-0528",
-    "kilo-code/minimax/minimax-m2.5",
+    "kilo-code/minimax/minimax-m2.5"
   ],
   "packages": [
     {
