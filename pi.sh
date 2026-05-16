@@ -1,8 +1,9 @@
 #!/bin/bash
 
 
+TOOLS="" # enable default tools (and extension tools?)
 # TOOLS="=--tools read,bash,edit,write" # default
-TOOLS="--tools read,bash,edit,write,grep,find,ls"
+#TOOLS="--tools read,bash,edit,write,grep,find,ls" # enable all build-in tools (but don't enable extension tools?)
 
 
 # location of this script
