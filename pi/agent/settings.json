@@ -1,9 +1,9 @@
 {
   "lastChangelogVersion": "0.74.0",
-  "theme": "light",
-  "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.5",
-  "defaultThinkingLevel": "low",
+  "theme": "nightowl",
+  "defaultProvider": "github-copilot",
+  "defaultModel": "gpt-5.3-codex",
+  "defaultThinkingLevel": "high",
   "hideThinkingBlock": true,
   "shellPath": "/bin/zsh",
   "shellCommandPrefix": "setopt aliases\nsource ~/.zshrc",
@@ -13,20 +13,19 @@
   "editorPaddingX": 0,
   "collapseChangelog": true,
   "enabledModels": [
-    "kilo-code/minimax/minimax-m2.5",
-    "kilo-code/deepseek/deepseek-r1-0528",
-    "kilo-code/openai/gpt-oss-120b",
-    "github-copilot/gemini-3-flash-preview",
-    "kilo-code/z-ai/glm-5",
-    "github-copilot/gemini-3-pro-preview",
-    "github-copilot/gemini-3.1-pro-preview",
-    "github-copilot/claude-opus-4.6",
-    "openai-codex/gpt-5.3-codex-spark",
+    "openai-codex/gpt-5.5",
+    "openai-codex/gpt-5.4",
     "openai-codex/gpt-5.3-codex",
-    "google-antigravity/claude-opus-4-6-thinking",
-    "google-antigravity/claude-sonnet-4-5-thinking",
-    "google-antigravity/gemini-3-flash",
-    "openai-codex/gpt-5.5"
+    "openai-codex/gpt-5.3-codex-spark",
+    "github-copilot/gpt-5.5",
+    "github-copilot/gpt-5.3-codex",
+    "github-copilot/gemini-3.1-pro-preview",
+    "github-copilot/gemini-3-flash-preview",
+    "github-copilot/claude-opus-4.7",
+    "github-copilot/claude-sonnet-4.6",
+    "kilo-code/z-ai/glm-5.1"
+    "kilo-code/deepseek/deepseek-r1-0528",
+    "kilo-code/minimax/minimax-m2.5",
   ],
   "packages": [
     {
@@ -50,5 +49,13 @@
   "extensions": [
     "-extensions/antigravity-quota.ts",
     "-extensions/copilot-quota.ts"
-  ]
+  ],
+  "terminal": {
+    "showTerminalProgress": true
+  },
+  "doubleEscapeAction": "tree",
+  "treeFilterMode": "user-only",
+  "warnings": {
+    "anthropicExtraUsage": true
+  }
 }
