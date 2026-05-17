@@ -22,3 +22,6 @@ pi/agent/tmp/
 
 # OS generated files
 .DS_Store
+
+# Tests
+tests/.keep
