@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "0.74.0",
+  "lastChangelogVersion": "0.74.1",
   "theme": "nightowl",
   "defaultProvider": "github-copilot",
   "defaultModel": "gemini-3-flash-preview",
@@ -22,9 +22,16 @@
     "github-copilot/gemini-3-flash-preview",
     "github-copilot/claude-opus-4.7",
     "github-copilot/claude-sonnet-4.6",
-    "kilo-code/z-ai/glm-5.1",
-    "kilo-code/deepseek/deepseek-r1-0528",
-    "kilo-code/minimax/minimax-m2.5"
+    "kilo-code/kilo-auto/free",
+    "kilo-code/nvidia/nemotron-3-super-120b-a12b:free",
+    "kilo-code/poolside/laguna-m.1:free",
+    "kilo-code/stepfun/step-3.5-flash:free",
+    "kilo-code/baidu/cobuddy:free",
+    "kilo-code/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+    "kilo-code/poolside/laguna-xs.2:free",
+    "kilo-code/deepseek/deepseek-v4-flash:free",
+    "kilo-code/openrouter/free",
+    "kilo-code/x-ai/grok-code-fast-1:optimized:free"
   ],
   "packages": [
     {
