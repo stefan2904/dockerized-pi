@@ -30,9 +30,8 @@
     {
       "source": "git:github.com/mitsuhiko/agent-stuff",
       "extensions": [
-        "-pi-extensions/files.ts",
-        "-pi-extensions/loop.ts",
-        "-pi-extensions/go-to-bed.ts",
+        "-extensions/files.ts",
+        "-extensions/loop.ts",
         "-extensions/go-to-bed.ts"
       ],
       "skills": [
@@ -41,7 +40,8 @@
         "-skills/apple-mail/SKILL.md"
       ],
       "themes": [
-        "+pi-themes/nightowl.json"
+        "+themes/modern-dark.json",
+        "+themes/nightowl.json"
       ]
     },
     "git:github.com/lucasmeijer/pi-terminal-signals"
