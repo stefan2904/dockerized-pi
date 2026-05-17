@@ -2,7 +2,7 @@
   "lastChangelogVersion": "0.74.1",
   "theme": "nightowl",
   "defaultProvider": "github-copilot",
-  "defaultModel": "gemini-3-flash-preview",
+  "defaultModel": "gemini-3.1-pro-preview",
   "defaultThinkingLevel": "high",
   "hideThinkingBlock": true,
   "shellPath": "/bin/zsh",
