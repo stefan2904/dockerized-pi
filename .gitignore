@@ -24,4 +24,5 @@ pi/agent/tmp/
 .DS_Store
 
 # Tests
-tests/.keep
+tests/*
+!tests/.keep
