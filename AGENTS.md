@@ -1,5 +1,6 @@
 # Agent Rules
 
+- When changing this repo's architecture or how Pi is built, launched, containerized, configured, or persisted, update the repo-memory notes in this `AGENTS.md`.
 - Do not edit anything under `pi/agent/git/`.
 - Do not commit files matched by `.gitignore`.
 - You are Pi, running inside the Pi coding-agent harness. Do not start another Pi session or run `pi` unless explicitly asked for testing.
@@ -7,3 +8,18 @@
   - Main: `/usr/local/lib/node_modules/@earendil-works/pi-coding-agent/README.md`
   - Docs: `/usr/local/lib/node_modules/@earendil-works/pi-coding-agent/docs`
   - Examples: `/usr/local/lib/node_modules/@earendil-works/pi-coding-agent/examples`
+
+## Repo memory: how Dockerized Pi works
+
+This repository is a Docker wrapper around `@earendil-works/pi-coding-agent` plus a persisted, preconfigured Pi home under `pi/`.
+
+- Build flow: `./build.sh [version]` builds image `pi-coding-agent` from `Dockerfile.release`, passing host `UID`, `GID`, and Pi npm package `VERSION` (default `latest`). `./build.sh --installed-version` runs `./pi.sh --version` and extracts the installed semver. `Dockerfile.git` is an alternate development Dockerfile that clones `earendil-works/pi-mono`, builds packages, packs `packages/coding-agent`, and installs that tarball instead of npm release.
+- Release image: based on `node:current-trixie-slim`; creates user `pi` matching host UID/GID; installs zsh, git, gh, glab, sentry-cli, curl/wget/jq/rg/tree/file, sudo/gosu, tmux/qemu, Java 21, uv-managed Python, autopep8, pytest, mitmproxy, and debugging CLIs (`xh`, `grpcurl`, `websocat`). It installs Pi globally with `npm install -g @earendil-works/pi-coding-agent@$VERSION`, sets `WORKDIR /workspace` and `HOME=/home/pi`, and uses `entrypoint.sh` as the container entrypoint.
+- Runtime entrypoint: `entrypoint.sh` starts as root, sets the `pi` user's sudo password from `PI_SUDO_PASSWORD` or generates/prints a random one, configures global git identity from `BOT_GIT_NAME`/`BOT_GIT_EMAIL`, logs `gh` in with `BOT_GH_TOKEN`, writes Sentry auth from `BOT_SENTRY_TOKEN`, then executes `gosu pi pi "$@"`. In other words: the image entrypoint always ends by calling the actual `pi` binary as the non-root `pi` user.
+- Host launcher: `./pi.sh [launcher-options] [pi args...]` is how Pi is normally called. It creates/sources `.env`, parses wrapper flags, discovers the project root by walking upward from `$PWD` until `.git`, `.project`, or `.projectile`, computes the relative working directory, and starts Docker. Normal Pi CLI args are passed through to the container after wrapper-added args.
+- Docker invocation in `pi.sh`: `docker run --rm` plus `-it` only for interactive terminals; mounts detected project root to `/workspace` as rw or ro; mounts this repo's `pi` directory to `/home/pi/.pi:rw`; mounts `.cache/checkouts` and `.cache/gondolin`; sets `-w /workspace/$REL_PATH`; passes `PI_PROJECT_ROOT`, `PI_MOUNT_MODE`, `PI_HOST_HOSTNAME`, selected provider/API env vars, and `--env-file .env`; image is `pi-coding-agent`; final command is `pi-coding-agent $TOOLS --session-dir ... [extra args] [user pi args]`, which the entrypoint converts to `gosu pi pi ...`.
+- Session/config persistence: Pi config and state live outside target projects in this repo's `pi/agent/` because it is mounted as `/home/pi/.pi`. Sessions are forced to `/home/pi/.pi/agent/sessions/--<canonical-host-project-root>--` so each host project gets stable saved sessions. Runtime/secrets paths such as `pi/agent/auth.json`, `pi/agent/sessions/*`, `pi/agent/git/`, and `.cache/` are gitignored.
+- Important `pi.sh` modes: `--ro`/`--readonly` mounts `/workspace` read-only and limits tools to read/search/list; a `.pi_ro` file in the current directory also forces ro. `--install` writes shell aliases `pi`, `pic`, and `picommit`. `--update` checks npm latest, rebuilds, then runs `./pi.sh update` for Pi packages. `--sessions` lists persisted session files. `--commit` rewrites args to run `/commit --force --user ... --email ...`, optionally with `PI_FAST_PROVIDER`/`PI_FAST_MODEL`.
+- Package-management passthrough: if the first Pi arg is `install`, `remove`, `update`, `list`, or `config`, `pi.sh` suppresses wrapper tool/session args so Pi package commands operate normally.
+- Optional project notes: if `.volumes.yml` exists in this repo and maps the original host cwd to another directory, `pi.sh` mounts that directory read-only at `/workspace-notes` and appends a system prompt telling Pi about it.
+- Bundled Pi customization lives under `pi/agent`: `settings.json` chooses theme/defaults/enabled models/packages and disables older quota extensions; `models.json` defines local Ollama/LM Studio OpenAI-compatible providers at `host.docker.internal`; `modes.json` stores named modes; `extensions/` includes `/files-changed` + `get_files_changed`, `/quota` + quota tools, Kilo Code provider commands, `switch_model`, and a footer showing host project/root/mount mode; `prompts/commit.md` defines `/commit`; `skills/git-autopep8` formats only changed Python lines.
