@@ -116,22 +116,22 @@ if [ "$DO_UPDATE" = true ]; then
     >&2 echo "Current installed pi version: $CURRENT_VERSION"
 
     if [ "$CURRENT_VERSION" == "$LATEST_VERSION" ]; then
-        >&2 echo "Already up to date!"
-        exit 0
+        >&2 echo "Pi image already up to date."
+        UPDATED_VERSION="$CURRENT_VERSION"
     else
         >&2 echo "Updating pi to version $LATEST_VERSION ..."
+        ./build.sh "$LATEST_VERSION"
+
+        UPDATED_VERSION=$(./build.sh --installed-version)
+        >&2 echo "Updated to pi version: $UPDATED_VERSION"
+
+        if [ "$UPDATED_VERSION" != "$LATEST_VERSION" ]; then
+            >&2 echo "Warning: expected version $LATEST_VERSION but got $UPDATED_VERSION"
+        fi
     fi
 
-    ./build.sh "$LATEST_VERSION"
     >&2 echo "Updating configured packages ..."
     ./pi.sh update
-
-    UPDATED_VERSION=$(./build.sh --installed-version)
-    >&2 echo "Updated to pi version: $UPDATED_VERSION"
-
-    if [ "$UPDATED_VERSION" != "$LATEST_VERSION" ]; then
-        >&2 echo "Warning: expected version $LATEST_VERSION but got $UPDATED_VERSION"
-    fi
     exit 0
 fi
 
