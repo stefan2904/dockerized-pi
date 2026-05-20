@@ -687,6 +687,30 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.registerTool({
+    name: "get_copilot_quota",
+    label: "Get GitHub Copilot Quota",
+    description: "Fetch current GitHub Copilot usage limits and quotas.",
+    parameters: Type.Object({}),
+    async execute() {
+      try {
+        const auth = loadAuth();
+        const config = auth["github-copilot"];
+        if (!config) throw new Error("github-copilot config not found in auth.json");
+        const data = await fetchCopilotQuota(config);
+        return {
+          content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+          details: data,
+        };
+      } catch (error) {
+        return {
+          content: [{ type: "text", text: `Error: ${error instanceof Error ? error.message : String(error)}` }],
+          isError: true,
+        };
+      }
+    },
+  });
+
+  pi.registerTool({
     name: "get_gemini_cli_quota",
     label: "Get Gemini CLI Quota",
     description: "Fetch Google Gemini CLI tier info and model quota availability.",
