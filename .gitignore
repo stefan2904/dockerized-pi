@@ -17,6 +17,8 @@ pi/agent/sessions/logs/*
 pi/agent/chat/
 pi/agent/telegram.json
 pi/agent/tmp/
+pi/agent/mcp-cache.json
+pi/agent/mcp-npx-cache.json
 
 .cache
 
