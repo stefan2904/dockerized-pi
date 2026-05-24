@@ -1,0 +1,92 @@
+name: Publish DockerHub Image
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Pi npm package version to install (matches ./build.sh argument)
+        required: false
+        default: latest
+      image:
+        description: DockerHub image name, for example dockerhub-user/pi-coding-agent
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+env:
+  DEFAULT_IMAGE_NAME: pi-coding-agent
+
+jobs:
+  build-and-push:
+    name: Build and push Dockerfile.release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Resolve image, version, and tags
+        id: docker
+        shell: bash
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          INPUT_IMAGE: ${{ inputs.image }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          image="${INPUT_IMAGE:-}"
+          if [ -z "$image" ]; then
+            image="${DOCKERHUB_USERNAME}/${DEFAULT_IMAGE_NAME}"
+          fi
+
+          version="${INPUT_VERSION:-latest}"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            version="${GITHUB_REF_NAME#v}"
+          fi
+
+          tags="${image}:sha-${GITHUB_SHA::12}"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            tags+=$'\n'"${image}:${GITHUB_REF_NAME#v}"
+          elif [ "${GITHUB_REF_NAME}" = "main" ] || [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            tags+=$'\n'"${image}:latest"
+          fi
+
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          {
+            echo 'tags<<EOF'
+            echo "$tags"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.release
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.docker.outputs.tags }}
+          build-args: |
+            UID=1000
+            GID=1000
+            VERSION=${{ steps.docker.outputs.version }}
