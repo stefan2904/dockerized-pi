@@ -67,19 +67,14 @@ while [[ $# -gt 0 ]]; do
 done
 set -- "${NEW_ARGS[@]}"
 
-# Resolve entrypoint path. Paths prefixed with @, or plain relative paths,
-# are relative to this script. Absolute paths are used as-is. Bare names can
-# be used as shortcuts for bundled entrypoints, e.g. "zsh" resolves to
-# "entrypoint-zsh.sh" when that file exists.
+# Resolve entrypoint path. Plain relative paths are relative to this script.
+# Absolute paths are used as-is. Bare names can be used as shortcuts for
+# bundled entrypoints, e.g. "zsh" resolves to "entrypoint-zsh.sh" when that
+# file exists.
 resolve_entrypoint_file() {
     local requested="$1"
     local base=""
     local candidates=()
-
-    if [[ "$requested" == @* ]]; then
-        printf '%s/%s\n' "$SCRIPT_DIR" "${requested#@}"
-        return
-    fi
 
     if [[ "$requested" == /* ]]; then
         printf '%s\n' "$requested"
