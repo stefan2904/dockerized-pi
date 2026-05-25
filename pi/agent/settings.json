@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "0.75.4",
+  "lastChangelogVersion": "0.75.5",
   "theme": "nightowl",
   "defaultProvider": "github-copilot",
   "defaultModel": "gemini-3.1-pro-preview",
@@ -50,7 +50,8 @@
         "+themes/nightowl.json"
       ]
     },
-    "git:github.com/lucasmeijer/pi-terminal-signals"
+    "git:github.com/lucasmeijer/pi-terminal-signals",
+    "npm:pi-mcp-adapter"
   ],
   "terminal": {
     "showTerminalProgress": true
