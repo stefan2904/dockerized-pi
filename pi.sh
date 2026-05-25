@@ -17,6 +17,7 @@ source "$SCRIPT_DIR/.env"
 
 # Handle flags
 MOUNT_MODE="rw"
+ENTRYPOINT_FILE="$SCRIPT_DIR/entrypoint.sh"
 DO_INSTALL=false
 DO_UPDATE=false
 DO_SESSIONS=false
@@ -46,6 +47,18 @@ while [[ $# -gt 0 ]]; do
             DO_COMMIT=true
             shift
             ;;
+        --entrypoint)
+            if [ -z "$2" ]; then
+                >&2 echo "Error: --entrypoint requires a path"
+                exit 1
+            fi
+            ENTRYPOINT_FILE="$2"
+            shift 2
+            ;;
+        --entrypoint=*)
+            ENTRYPOINT_FILE="${1#--entrypoint=}"
+            shift
+            ;;
         *)
             NEW_ARGS+=("$1")
             shift
@@ -53,6 +66,58 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 set -- "${NEW_ARGS[@]}"
+
+# Resolve entrypoint path. Paths prefixed with @, or plain relative paths,
+# are relative to this script. Absolute paths are used as-is. Bare names can
+# be used as shortcuts for bundled entrypoints, e.g. "zsh" resolves to
+# "entrypoint-zsh.sh" when that file exists.
+resolve_entrypoint_file() {
+    local requested="$1"
+    local base=""
+    local candidates=()
+
+    if [[ "$requested" == @* ]]; then
+        printf '%s/%s\n' "$SCRIPT_DIR" "${requested#@}"
+        return
+    fi
+
+    if [[ "$requested" == /* ]]; then
+        printf '%s\n' "$requested"
+        return
+    fi
+
+    if [[ "$requested" == */* ]]; then
+        printf '%s/%s\n' "$SCRIPT_DIR" "$requested"
+        return
+    fi
+
+    base="$SCRIPT_DIR/$requested"
+    candidates+=("$base")
+    if [[ "$requested" != *.sh ]]; then
+        candidates+=("$base.sh")
+    fi
+    if [[ "$requested" != entrypoint-* ]]; then
+        candidates+=("$SCRIPT_DIR/entrypoint-$requested")
+        if [[ "$requested" != *.sh ]]; then
+            candidates+=("$SCRIPT_DIR/entrypoint-$requested.sh")
+        fi
+    fi
+
+    for candidate in "${candidates[@]}"; do
+        if [ -f "$candidate" ]; then
+            printf '%s\n' "$candidate"
+            return
+        fi
+    done
+
+    printf '%s\n' "$base"
+}
+
+ENTRYPOINT_FILE="$(resolve_entrypoint_file "$ENTRYPOINT_FILE")"
+if [ ! -f "$ENTRYPOINT_FILE" ]; then
+    >&2 echo "Error: entrypoint file not found: $ENTRYPOINT_FILE"
+    exit 1
+fi
 
 # --commit flag
 if [ "$DO_COMMIT" = true ]; then
@@ -289,6 +354,7 @@ docker run --rm $INTERACTIVE_FLAGS \
   -v "$SCRIPT_DIR/pi":/home/pi/.pi:rw \
   -v "$SCRIPT_DIR/.cache/checkouts":/home/pi/.cache/checkouts:rw \
   -v "$SCRIPT_DIR/.cache/gondolin":/home/pi/.cache/gondolin:rw \
+  -v "$ENTRYPOINT_FILE":/usr/local/bin/entrypoint.sh:ro \
   "${EXTRA_VOLUMES[@]}" \
   -w "/workspace/$REL_PATH" \
   -e PI_PROJECT_ROOT="$PROJECT_ROOT" \
