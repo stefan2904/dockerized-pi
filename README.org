@@ -67,6 +67,7 @@ Use =./pi.sh [options] [pi arguments...]= from any directory. The launcher disco
 ./pi.sh -p "summarize this repo"      # pass normal Pi CLI args through
 ./pi.sh --commit                     # run the /commit prompt template
 ./pi.sh --sessions                   # list saved sessions
+./pi.sh --entrypoint entrypoint-zsh.sh # run with an alternate container entrypoint
 ./pi.sh --update                     # update Pi and configured packages
 #+end_src
 
@@ -79,6 +80,7 @@ Launcher options:
 | =--sessions= | Show recent session files under =pi/agent/sessions=. |
 | =--ro=, =--readonly= | Mount the workspace read-only and expose only read/search/list tools. |
 | =--commit= | Invoke the checked-in =/commit= prompt, optionally using =PI_FAST_PROVIDER=/=PI_FAST_MODEL=. |
+| =--entrypoint PATH=, =--entrypoint=PATH= | Bind-mount an alternate container entrypoint. Relative paths and =@PATH= are resolved from this repository. |
 
 If a project contains a =.pi_ro= file, the launcher forces read-only mode for that project.
 

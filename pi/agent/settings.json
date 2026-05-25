@@ -1,9 +1,9 @@
 {
   "lastChangelogVersion": "0.75.5",
   "theme": "nightowl",
-  "defaultProvider": "github-copilot",
-  "defaultModel": "gemini-3.1-pro-preview",
-  "defaultThinkingLevel": "high",
+  "defaultProvider": "openai-codex",
+  "defaultModel": "gpt-5.5",
+  "defaultThinkingLevel": "medium",
   "hideThinkingBlock": true,
   "shellPath": "/bin/zsh",
   "shellCommandPrefix": "setopt aliases\nsource ~/.zshrc",
