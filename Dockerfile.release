@@ -26,7 +26,7 @@ RUN set -eux; \
         *) echo "Unsupported architecture for pi-chat dependencies: $arch" >&2; exit 1 ;; \
     esac; \
     apt-get update && apt-get install -y --no-install-recommends \
-    zsh git wget curl jq tree file sudo gosu ripgrep ca-certificates tmux qemu-utils $qemu_pkgs \
+    zsh git wget curl jq tree file sudo gosu ripgrep ca-certificates tmux qemu-utils sqlite3 $qemu_pkgs \
     openjdk-21-jdk unzip && \
     ln -s /usr/lib/jvm/java-21-openjdk-* /opt/openjdk-default && \
     java -version && \
