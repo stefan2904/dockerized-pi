@@ -27,7 +27,7 @@ RUN set -eux; \
     esac; \
     apt-get update && apt-get install -y --no-install-recommends \
     zsh git wget curl jq tree file sudo gosu ripgrep ca-certificates tmux qemu-utils sqlite3 $qemu_pkgs \
-    openjdk-21-jdk unzip && \
+    openjdk-21-jdk unzip pandoc && \
     ln -s /usr/lib/jvm/java-21-openjdk-* /opt/openjdk-default && \
     java -version && \
     javac -version && \
@@ -92,7 +92,8 @@ RUN uv python install --default && \
     ln -sf /usr/local/bin/python3 /usr/local/bin/python && \
     uv tool install autopep8 && \
     uv tool install pytest && \
-    uv tool install mitmproxy
+    uv tool install mitmproxy && \
+    uv tool install markitdown
 
 # Install ghcli
 RUN (mkdir -p /usr/share/keyrings && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | tee /usr/share/keyrings/githubcli-archive-keyring.gpg > /dev/null) && \
