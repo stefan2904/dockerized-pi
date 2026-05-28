@@ -22,6 +22,7 @@ DO_INSTALL=false
 DO_UPDATE=false
 DO_SESSIONS=false
 DO_COMMIT=false
+DOCKER_PORT_ARGS=()
 NEW_ARGS=()
 
 while [[ $# -gt 0 ]]; do
@@ -57,6 +58,20 @@ while [[ $# -gt 0 ]]; do
             ;;
         --entrypoint=*)
             ENTRYPOINT_FILE="${1#--entrypoint=}"
+            shift
+            ;;
+        --port|--publish)
+            # Docker port mapping format is HOST_PORT:CONTAINER_PORT.
+            # Example: 8080:3000 exposes container port 3000 on host port 8080.
+            if [ -z "$2" ]; then
+                >&2 echo "Error: $1 requires a port mapping (for example: 8080:8080)"
+                exit 1
+            fi
+            DOCKER_PORT_ARGS+=(-p "$2")
+            shift 2
+            ;;
+        --port=*|--publish=*)
+            DOCKER_PORT_ARGS+=(-p "${1#*=}")
             shift
             ;;
         *)
@@ -334,6 +349,9 @@ fi
 if [ "$MOUNT_MODE" = "ro" ]; then
     >&2 echo "INFO: Mounting /workspace as READ-ONLY"
 fi
+if [ ${#DOCKER_PORT_ARGS[@]} -gt 0 ]; then
+    >&2 echo "INFO: Publishing Docker ports: ${DOCKER_PORT_ARGS[*]}"
+fi
 >&2 echo "_____________________________________________"
 
 # Determine if we are in an interactive terminal
@@ -345,6 +363,7 @@ else
 fi
 
 docker run --rm $INTERACTIVE_FLAGS \
+  "${DOCKER_PORT_ARGS[@]}" \
   -v "$PROJECT_ROOT":/workspace:$MOUNT_MODE \
   -v "$SCRIPT_DIR/pi":/home/pi/.pi:rw \
   -v "$SCRIPT_DIR/.cache/checkouts":/home/pi/.cache/checkouts:rw \
