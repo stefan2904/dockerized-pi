@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "0.75.5",
+  "lastChangelogVersion": "0.78.1",
   "theme": "nightowl",
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-5.5",
@@ -21,16 +21,7 @@
     "github-copilot/gemini-3.1-pro-preview",
     "github-copilot/gemini-3-flash-preview",
     "github-copilot/claude-opus-4.7",
-    "github-copilot/claude-sonnet-4.6",
-    "kilo-code/deepseek/deepseek-v4-flash:free",
-    "kilo-code/poolside/laguna-m.1:free",
-    "kilo-code/nvidia/nemotron-3-super-120b-a12b:free",
-    "kilo-code/stepfun/step-3.5-flash:free",
-    "kilo-code/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-    "kilo-code/poolside/laguna-xs.2:free",
-    "kilo-code/baidu/cobuddy:free",
-    "kilo-code/kilo-auto/free",
-    "kilo-code/openrouter/free"
+    "github-copilot/claude-sonnet-4.6"
   ],
   "packages": [
     {
