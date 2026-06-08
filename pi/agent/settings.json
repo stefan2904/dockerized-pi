@@ -41,7 +41,8 @@
       ]
     },
     "git:github.com/lucasmeijer/pi-terminal-signals",
-    "npm:pi-mcp-adapter"
+    "npm:pi-mcp-adapter",
+    "npm:pi-web-access"
   ],
   "terminal": {
     "showTerminalProgress": true
