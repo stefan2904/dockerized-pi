@@ -13,6 +13,7 @@
 pi/agent/bin
 pi/agent/auth.json
 pi/agent/codex-account-switcher.json
+pi/agent/codex-account-switcher*.json
 pi/agent/sessions/*
 pi/agent/sessions/logs/*
 pi/agent/chat/
