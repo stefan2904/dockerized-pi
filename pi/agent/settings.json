@@ -42,7 +42,12 @@
     },
     "git:github.com/lucasmeijer/pi-terminal-signals",
     "npm:pi-mcp-adapter",
-    "npm:pi-web-access"
+    {
+      "source": "npm:pi-web-access",
+      "skills": [
+        "-skills/librarian/SKILL.md"
+      ]
+    }
   ],
   "terminal": {
     "showTerminalProgress": true
