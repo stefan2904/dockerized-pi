@@ -6,7 +6,9 @@ import { homedir } from "node:os";
 import path from "node:path";
 
 const PROVIDER = "openai-codex";
-const STATUS_KEY = "codex-account";
+// Footer extension statuses are sorted by key; prefix with zz- so the Codex
+// account indicator appears on the right side of the status bar.
+const STATUS_KEY = "zz-codex-account";
 const STORE_FILE = "codex-account-switcher.json";
 
 type OpenAICodexCredential = {
@@ -236,7 +238,8 @@ async function updateStatus(ctx: Pick<ExtensionContext, "modelRegistry" | "ui">,
   if (current) {
     label = findMatchingAccountLabel(loaded, current) ?? label;
   }
-  ctx.ui.setStatus(STATUS_KEY, label ? `codex: ${label}` : undefined);
+  const txt = label ? `[codex: ${label}]` : "[codex: none]";
+  ctx.ui.setStatus(STATUS_KEY, ctx.ui.theme.fg("muted", txt));
 }
 
 async function promptForAccount(ctx: ExtensionCommandContext, store: Store, title = "Select Codex account:"): Promise<string | undefined> {
