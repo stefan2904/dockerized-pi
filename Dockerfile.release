@@ -105,7 +105,7 @@ RUN (mkdir -p /usr/share/keyrings && curl -fsSL https://cli.github.com/packages/
 # Install pi coding agent (as root)
 ARG VERSION=latest
 RUN npm install -g npm@latest && \
-    npm install -g @earendil-works/pi-coding-agent@$VERSION && \
+    npm install -g @earendil-works/pi-coding-agent@$VERSION @earendil-works/gondolin && \
     npm cache clean --force
 
 # Set up workspace
