@@ -19,6 +19,8 @@ pi/agent/telegram.json
 pi/agent/tmp/
 pi/agent/mcp-cache.json
 pi/agent/mcp-npx-cache.json
+pi/agent/agents/
+pi/agent/trust.json
 
 .cache
 
