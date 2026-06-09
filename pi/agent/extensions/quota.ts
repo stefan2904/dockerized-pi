@@ -10,6 +10,7 @@ const GOOGLE_BASE_URL = "https://cloudcode-pa.googleapis.com";
 const CHATGPT_BASE_URL = "https://chatgpt.com/backend-api";
 const OPENAI_AUTH_CLAIM = "https://api.openai.com/auth";
 const OPENAI_PROFILE_CLAIM = "https://api.openai.com/profile";
+const CODEX_QUOTA_PROBE_MODELS = ["gpt-5.5", "gpt-5.4"];
 
 const COPILOT_HEADERS = {
   "User-Agent": "GitHubCopilotChat/0.35.0",
@@ -266,24 +267,36 @@ async function fetchOpenAICodexQuota(config: AuthProviderConfig) {
     "content-type": "application/json",
   };
 
-  const probeBody = {
-    model: "gpt-5.3-codex",
-    store: false,
-    stream: true,
-    instructions: "You are a quota probe.",
-    input: [{ role: "user", content: [{ type: "input_text", text: "ping" }] }],
-    text: { verbosity: "low" as const },
-  };
+  let response: Response | undefined;
+  const failures: string[] = [];
 
-  const response = await fetch(`${CHATGPT_BASE_URL}/codex/responses`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(probeBody),
-  });
+  for (const model of CODEX_QUOTA_PROBE_MODELS) {
+    const probeBody = {
+      model,
+      store: false,
+      stream: true,
+      instructions: "You are a quota probe.",
+      input: [{ role: "user", content: [{ type: "input_text", text: "ping" }] }],
+      text: { verbosity: "low" as const },
+    };
 
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`codex probe failed (${response.status}): ${body.slice(0, 180)}`);
+    const probeResponse = await fetch(`${CHATGPT_BASE_URL}/codex/responses`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(probeBody),
+    });
+
+    if (probeResponse.ok) {
+      response = probeResponse;
+      break;
+    }
+
+    const body = await probeResponse.text();
+    failures.push(`${model}: ${probeResponse.status} ${body.slice(0, 120)}`);
+  }
+
+  if (!response) {
+    throw new Error(`codex probe failed (${failures.join("; ")})`);
   }
 
   // We only need headers; cancel stream to minimize output processing.
@@ -395,12 +408,13 @@ function collectGoogleModelRows(provider: string, account: string, plan: string,
   });
 }
 
-function codexWindowFields(window?: CodexRateWindow): { value: string; reset: string } {
+function codexWindowFields(window?: CodexRateWindow): { value: string; reset: string; progressRemaining?: number } {
   if (!window || window.usedPercent === undefined) return { value: "n/a", reset: "unknown" };
   const used = Math.max(0, Math.min(100, window.usedPercent));
   return {
     value: `${(100 - used).toFixed(1)}% rem`,
     reset: formatEpochUtc(window.resetAt),
+    progressRemaining: (100 - used) / 100,
   };
 }
 
@@ -629,10 +643,26 @@ export default function (pi: ExtensionAPI) {
                 const plan = quota.planType || planFromToken || "unknown";
 
                 const primary = codexWindowFields(quota.primary);
-                rows.push({ provider: entry.provider, account, plan, metric: "codex_primary", value: primary.value, reset: primary.reset });
+                rows.push({
+                  provider: entry.provider,
+                  account,
+                  plan,
+                  metric: "codex_primary",
+                  value: primary.value,
+                  reset: primary.reset,
+                  progressRemaining: primary.progressRemaining,
+                });
 
                 const secondary = codexWindowFields(quota.secondary);
-                rows.push({ provider: entry.provider, account, plan, metric: "codex_secondary", value: secondary.value, reset: secondary.reset });
+                rows.push({
+                  provider: entry.provider,
+                  account,
+                  plan,
+                  metric: "codex_secondary",
+                  value: secondary.value,
+                  reset: secondary.reset,
+                  progressRemaining: secondary.progressRemaining,
+                });
 
                 if (typeof quota.primaryOverSecondaryPercent === "number") {
                   rows.push({
