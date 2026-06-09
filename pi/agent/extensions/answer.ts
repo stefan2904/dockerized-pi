@@ -37,6 +37,11 @@ interface ExtractionResult {
 	questions: ExtractedQuestion[];
 }
 
+type ExtractionOutcome =
+	| { type: "success"; result: ExtractionResult }
+	| { type: "cancelled" }
+	| { type: "error"; message: string };
+
 const SYSTEM_PROMPT = `You are a question extractor. Given text from a conversation, extract any questions that need answering.
 
 Output a JSON object with this structure:
@@ -69,11 +74,11 @@ Example output:
   ]
 }`;
 
-const CODEX_MODEL_ID = "gpt-5.3-codex";
+const CODEX_MODEL_ID = "gpt-5.4-mini";
 const HAIKU_MODEL_ID = "claude-haiku-4-5";
 
 /**
- * Prefer GPT-5.3 for extraction when available, otherwise fallback to haiku or the current model.
+ * Prefer GPT-5.4 mini for extraction when available, otherwise fallback to haiku or the current model.
  */
 async function selectExtractionModel(
 	currentModel: Model<Api>,
@@ -116,12 +121,46 @@ function parseExtractionResult(text: string): ExtractionResult | null {
 
 		const parsed = JSON.parse(jsonStr);
 		if (parsed && Array.isArray(parsed.questions)) {
-			return parsed as ExtractionResult;
+			const questions = parsed.questions
+				.filter((q: unknown): q is { question: unknown; context?: unknown } => {
+					return typeof q === "object" && q !== null && "question" in q;
+				})
+				.map((q): ExtractedQuestion => {
+					const question: ExtractedQuestion = { question: String(q.question).trim() };
+					if (typeof q.context === "string" && q.context.trim()) {
+						question.context = q.context.trim();
+					}
+					return question;
+				})
+				.filter((q) => q.question.length > 0);
+			return { questions };
 		}
 		return null;
 	} catch {
 		return null;
 	}
+}
+
+function formatError(error: unknown): string {
+	if (error instanceof Error) {
+		return error.message || error.name;
+	}
+	if (typeof error === "string") {
+		return error;
+	}
+	try {
+		return JSON.stringify(error) ?? String(error);
+	} catch {
+		return String(error);
+	}
+}
+
+function previewText(text: string, maxLength: number = 300): string {
+	const normalized = text.replace(/\s+/g, " ").trim();
+	if (normalized.length <= maxLength) {
+		return normalized;
+	}
+	return `${normalized.slice(0, maxLength - 1)}…`;
 }
 
 /**
@@ -453,14 +492,23 @@ export default function (pi: ExtensionAPI) {
 			const extractionModel = await selectExtractionModel(ctx.model, ctx.modelRegistry);
 
 			// Run extraction with loader UI
-			const extractionResult = await ctx.ui.custom<ExtractionResult | null>((tui, theme, _kb, done) => {
+			const extractionOutcome = await ctx.ui.custom<ExtractionOutcome>((tui, theme, _kb, done) => {
 				const loader = new BorderedLoader(tui, theme, `Extracting questions using ${extractionModel.id}...`);
-				loader.onAbort = () => done(null);
+				let finished = false;
+				const finish = (outcome: ExtractionOutcome) => {
+					if (finished) return;
+					finished = true;
+					done(outcome);
+				};
+				loader.onAbort = () => finish({ type: "cancelled" });
 
 				const doExtract = async () => {
 					const auth = await ctx.modelRegistry.getApiKeyAndHeaders(extractionModel);
 					if (auth.ok === false) {
 						throw new Error(auth.error);
+					}
+					if (!auth.apiKey) {
+						throw new Error(`No API key available for ${extractionModel.provider}/${extractionModel.id}`);
 					}
 					const userMessage: UserMessage = {
 						role: "user",
@@ -475,7 +523,7 @@ export default function (pi: ExtensionAPI) {
 					);
 
 					if (response.stopReason === "aborted") {
-						return null;
+						return { type: "cancelled" } as ExtractionOutcome;
 					}
 
 					const responseText = response.content
@@ -483,20 +531,42 @@ export default function (pi: ExtensionAPI) {
 						.map((c) => c.text)
 						.join("\n");
 
-					return parseExtractionResult(responseText);
+					if (!responseText.trim()) {
+						throw new Error(`Question extraction returned an empty response (stop reason: ${response.stopReason})`);
+					}
+
+					const parsed = parseExtractionResult(responseText);
+					if (!parsed) {
+						throw new Error(`Question extraction returned invalid JSON: ${previewText(responseText)}`);
+					}
+
+					return { type: "success", result: parsed } as ExtractionOutcome;
 				};
 
 				doExtract()
-					.then(done)
-					.catch(() => done(null));
+					.then(finish)
+					.catch((error) => finish(
+						loader.signal.aborted
+							? { type: "cancelled" }
+							: {
+								type: "error",
+								message: `Failed to extract questions with ${extractionModel.provider}/${extractionModel.id}: ${formatError(error)}`,
+							},
+					));
 
 				return loader;
 			});
 
-			if (extractionResult === null) {
+			if (extractionOutcome.type === "cancelled") {
 				ctx.ui.notify("Cancelled", "info");
 				return;
 			}
+			if (extractionOutcome.type === "error") {
+				ctx.ui.notify(extractionOutcome.message, "error");
+				return;
+			}
+
+			const extractionResult = extractionOutcome.result;
 
 			if (extractionResult.questions.length === 0) {
 				ctx.ui.notify("No questions found in the last message", "info");
