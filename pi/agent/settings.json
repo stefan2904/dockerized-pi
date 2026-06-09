@@ -28,7 +28,8 @@
       "extensions": [
         "-extensions/files.ts",
         "-extensions/loop.ts",
-        "-extensions/go-to-bed.ts"
+        "-extensions/go-to-bed.ts",
+        "-extensions/answer.ts"
       ],
       "skills": [
         "-skills/web-browser/SKILL.md",
