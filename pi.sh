@@ -23,6 +23,7 @@ DO_UPDATE=false
 DO_SESSIONS=false
 DO_COMMIT=false
 DOCKER_PORT_ARGS=()
+DOCKER_NETWORK_ARGS=()
 NEW_ARGS=()
 
 while [[ $# -gt 0 ]]; do
@@ -72,6 +73,20 @@ while [[ $# -gt 0 ]]; do
             ;;
         --port=*|--publish=*)
             DOCKER_PORT_ARGS+=(-p "${1#*=}")
+            shift
+            ;;
+        --network|--docker-network)
+            # Docker network name or mode. The network must already exist unless
+            # using a built-in mode such as host, bridge, or none.
+            if [ -z "$2" ]; then
+                >&2 echo "Error: $1 requires a Docker network name (for example: my-network)"
+                exit 1
+            fi
+            DOCKER_NETWORK_ARGS+=(--network "$2")
+            shift 2
+            ;;
+        --network=*|--docker-network=*)
+            DOCKER_NETWORK_ARGS+=(--network "${1#*=}")
             shift
             ;;
         *)
@@ -352,6 +367,9 @@ fi
 if [ ${#DOCKER_PORT_ARGS[@]} -gt 0 ]; then
     >&2 echo "INFO: Publishing Docker ports: ${DOCKER_PORT_ARGS[*]}"
 fi
+if [ ${#DOCKER_NETWORK_ARGS[@]} -gt 0 ]; then
+    >&2 echo "INFO: Using Docker network: ${DOCKER_NETWORK_ARGS[*]}"
+fi
 >&2 echo "_____________________________________________"
 
 # Determine if we are in an interactive terminal
@@ -364,6 +382,7 @@ fi
 
 docker run --rm $INTERACTIVE_FLAGS \
   "${DOCKER_PORT_ARGS[@]}" \
+  "${DOCKER_NETWORK_ARGS[@]}" \
   -v "$PROJECT_ROOT":/workspace:$MOUNT_MODE \
   -v "$SCRIPT_DIR/pi":/home/pi/.pi:rw \
   -v "$SCRIPT_DIR/.cache/checkouts":/home/pi/.cache/checkouts:rw \

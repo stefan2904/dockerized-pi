@@ -68,6 +68,7 @@ Use =./pi.sh [options] [pi arguments...]= from any directory. The launcher disco
 ./pi.sh --commit                     # run the /commit prompt template
 ./pi.sh --sessions                   # list saved sessions
 ./pi.sh --entrypoint entrypoint-zsh.sh # run with an alternate container entrypoint
+./pi.sh --network my-dev-net         # attach the container to an existing Docker network
 ./pi.sh --update                     # update Pi and configured packages
 #+end_src
 
@@ -81,6 +82,7 @@ Launcher options:
 | =--ro=, =--readonly= | Mount the workspace read-only and expose only read/search/list tools. |
 | =--commit= | Invoke the checked-in =/commit= prompt, optionally using =PI_FAST_PROVIDER=/=PI_FAST_MODEL=. |
 | =--entrypoint PATH=, =--entrypoint=PATH= | Bind-mount an alternate container entrypoint. Relative paths and =@PATH= are resolved from this repository. |
+| =--network NAME=, =--network=NAME=, =--docker-network NAME=, =--docker-network=NAME= | Pass =--network NAME= to =docker run= to attach the started container to an existing Docker network or Docker network mode. |
 
 If a project contains a =.pi_ro= file, the launcher forces read-only mode for that project.
 
