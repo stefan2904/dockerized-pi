@@ -24,7 +24,19 @@ DO_SESSIONS=false
 DO_COMMIT=false
 DOCKER_PORT_ARGS=()
 DOCKER_NETWORK_ARGS=()
+DOCKER_ENV_ARGS=()
+DOCKER_ENV_FILE_ARGS=()
 NEW_ARGS=()
+
+resolve_env_file() {
+    local requested="$1"
+
+    if [[ "$requested" == /* ]]; then
+        printf '%s\n' "$requested"
+    else
+        printf '%s/%s\n' "$ORIGINAL_CWD" "$requested"
+    fi
+}
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -87,6 +99,44 @@ while [[ $# -gt 0 ]]; do
             ;;
         --network=*|--docker-network=*)
             DOCKER_NETWORK_ARGS+=(--network "${1#*=}")
+            shift
+            ;;
+        --env|--docker-env)
+            # Docker environment variable in KEY=VALUE form, or KEY to copy
+            # from the host environment.
+            if [ -z "$2" ]; then
+                >&2 echo "Error: $1 requires an environment variable (for example: FOO=bar)"
+                exit 1
+            fi
+            DOCKER_ENV_ARGS+=(-e "$2")
+            shift 2
+            ;;
+        --env=*|--docker-env=*)
+            DOCKER_ENV_ARGS+=(-e "${1#*=}")
+            shift
+            ;;
+        --env-file|--docker-env-file)
+            # Additional Docker env-file. Relative paths are resolved from the
+            # original directory where pi.sh was invoked.
+            if [ -z "$2" ]; then
+                >&2 echo "Error: $1 requires an env-file path"
+                exit 1
+            fi
+            ENV_FILE_PATH="$(resolve_env_file "$2")"
+            if [ ! -f "$ENV_FILE_PATH" ]; then
+                >&2 echo "Error: env-file not found: $ENV_FILE_PATH"
+                exit 1
+            fi
+            DOCKER_ENV_FILE_ARGS+=(--env-file "$ENV_FILE_PATH")
+            shift 2
+            ;;
+        --env-file=*|--docker-env-file=*)
+            ENV_FILE_PATH="$(resolve_env_file "${1#*=}")"
+            if [ ! -f "$ENV_FILE_PATH" ]; then
+                >&2 echo "Error: env-file not found: $ENV_FILE_PATH"
+                exit 1
+            fi
+            DOCKER_ENV_FILE_ARGS+=(--env-file "$ENV_FILE_PATH")
             shift
             ;;
         *)
@@ -402,5 +452,8 @@ docker run --rm $INTERACTIVE_FLAGS \
   ${HF_TOKEN:+-e HF_TOKEN} \
   ${OPENROUTER_API_KEY:+-e OPENROUTER_API_KEY} \
   ${PI_CACHE_RETENTION:+-e PI_CACHE_RETENTION} \
-  --env-file "$SCRIPT_DIR/.env" $DEBUGFLAGS \
+  --env-file "$SCRIPT_DIR/.env" \
+  "${DOCKER_ENV_FILE_ARGS[@]}" \
+  "${DOCKER_ENV_ARGS[@]}" \
+  $DEBUGFLAGS \
   pi-coding-agent $TOOLS "${SESSION_DIR_CMD[@]}" "${EXTRA_PI_ARGS[@]}" "${@}"

@@ -69,6 +69,8 @@ Use =./pi.sh [options] [pi arguments...]= from any directory. The launcher disco
 ./pi.sh --sessions                   # list saved sessions
 ./pi.sh --entrypoint entrypoint-zsh.sh # run with an alternate container entrypoint
 ./pi.sh --network my-dev-net         # attach the container to an existing Docker network
+./pi.sh --env GITLAB_TOKEN=glpat-... # pass an extra environment variable
+./pi.sh --env-file .pi.env           # pass an extra Docker env-file from $PWD
 ./pi.sh --update                     # update Pi and configured packages
 #+end_src
 
@@ -83,6 +85,8 @@ Launcher options:
 | =--commit= | Invoke the checked-in =/commit= prompt, optionally using =PI_FAST_PROVIDER=/=PI_FAST_MODEL=. |
 | =--entrypoint PATH=, =--entrypoint=PATH= | Bind-mount an alternate container entrypoint. Relative paths and =@PATH= are resolved from this repository. |
 | =--network NAME=, =--network=NAME=, =--docker-network NAME=, =--docker-network=NAME= | Pass =--network NAME= to =docker run= to attach the started container to an existing Docker network or Docker network mode. |
+| =--env KEY=VALUE=, =--env=KEY=VALUE=, =--docker-env KEY=VALUE=, =--docker-env=KEY=VALUE= | Pass an additional environment variable to =docker run=. Use =KEY= without a value to copy from the host environment. |
+| =--env-file PATH=, =--env-file=PATH=, =--docker-env-file PATH=, =--docker-env-file=PATH= | Pass an additional Docker env-file. Relative paths are resolved from the directory where =pi.sh= was invoked. Additional env-files are passed after this repo's =.env=. |
 
 If a project contains a =.pi_ro= file, the launcher forces read-only mode for that project.
 
@@ -102,7 +106,7 @@ This writes aliases to the first existing file among =~/.zshrc.local=, =~/.zshrc
 
 ** 📋 Environment variables
 
-Copy =.env.template= to =.env= and set only what you need. The file is passed to Docker with =--env-file= and is ignored by git.
+Copy =.env.template= to =.env= and set only what you need. The file is passed to Docker with =--env-file= and is ignored by git. You can also pass per-run values with launcher options such as =--env FOO=bar= or =--env-file ./local.env=.
 
 | Variable | Purpose |
 |----------+---------|
