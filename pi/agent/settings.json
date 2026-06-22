@@ -1,9 +1,9 @@
 {
-  "lastChangelogVersion": "0.79.4",
-  "theme": "nightowl",
+  "lastChangelogVersion": "0.79.10",
+  "theme": "modern-dark",
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-5.5",
-  "defaultThinkingLevel": "medium",
+  "defaultThinkingLevel": "xhigh",
   "hideThinkingBlock": true,
   "shellPath": "/bin/zsh",
   "shellCommandPrefix": "setopt aliases\nsource ~/.zshrc",
