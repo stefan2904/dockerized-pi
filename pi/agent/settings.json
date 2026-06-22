@@ -3,7 +3,7 @@
   "theme": "modern-dark",
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-5.5",
-  "defaultThinkingLevel": "xhigh",
+  "defaultThinkingLevel": "medium",
   "hideThinkingBlock": true,
   "shellPath": "/bin/zsh",
   "shellCommandPrefix": "setopt aliases\nsource ~/.zshrc",
@@ -14,14 +14,14 @@
   "collapseChangelog": true,
   "enabledModels": [
     "openai-codex/gpt-5.5",
-    "openai-codex/gpt-5.4",
     "github-copilot/gemini-3.1-pro-preview",
     "github-copilot/gemini-3-flash-preview",
-    "github-copilot/claude-sonnet-4.6",
-    "github-copilot/claude-opus-4.8",
     "github-copilot/claude-haiku-4.5",
-    "github-copilot/gemini-3.5-flash",
-    "openai-codex/gpt-5.4-mini"
+    "openai-codex/gpt-5.4-mini",
+    "openrouter/openrouter/free",
+    "openrouter/openrouter/owl-alpha",
+    "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
+    "openrouter/poolside/laguna-m.1:free"
   ],
   "packages": [
     {
