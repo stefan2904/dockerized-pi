@@ -26,6 +26,7 @@ DOCKER_PORT_ARGS=()
 DOCKER_NETWORK_ARGS=()
 DOCKER_ENV_ARGS=()
 DOCKER_ENV_FILE_ARGS=()
+DOCKER_VOLUME_ARGS=()
 NEW_ARGS=()
 
 resolve_env_file() {
@@ -137,6 +138,20 @@ while [[ $# -gt 0 ]]; do
                 exit 1
             fi
             DOCKER_ENV_FILE_ARGS+=(--env-file "$ENV_FILE_PATH")
+            shift
+            ;;
+        --volume|--docker-volume)
+            # Additional Docker volume mount in HOST_PATH:CONTAINER_PATH[:MODE] form.
+            # Example: --volume "$VOLUME_SHAREPOINT":/workspace/sharepoint:ro
+            if [ -z "$2" ]; then
+                >&2 echo "Error: $1 requires a volume mapping (for example: /host/path:/container/path:ro)"
+                exit 1
+            fi
+            DOCKER_VOLUME_ARGS+=(-v "$2")
+            shift 2
+            ;;
+        --volume=*|--docker-volume=*)
+            DOCKER_VOLUME_ARGS+=(-v "${1#*=}")
             shift
             ;;
         *)
@@ -420,6 +435,9 @@ fi
 if [ ${#DOCKER_NETWORK_ARGS[@]} -gt 0 ]; then
     >&2 echo "INFO: Using Docker network: ${DOCKER_NETWORK_ARGS[*]}"
 fi
+if [ ${#DOCKER_VOLUME_ARGS[@]} -gt 0 ]; then
+    >&2 echo "INFO: Mounting additional Docker volumes: ${DOCKER_VOLUME_ARGS[*]}"
+fi
 >&2 echo "_____________________________________________"
 
 # Determine if we are in an interactive terminal
@@ -433,6 +451,7 @@ fi
 docker run --rm $INTERACTIVE_FLAGS \
   "${DOCKER_PORT_ARGS[@]}" \
   "${DOCKER_NETWORK_ARGS[@]}" \
+  "${DOCKER_VOLUME_ARGS[@]}" \
   -v "$PROJECT_ROOT":/workspace:$MOUNT_MODE \
   -v "$SCRIPT_DIR/pi":/home/pi/.pi:rw \
   -v "$SCRIPT_DIR/.cache/checkouts":/home/pi/.cache/checkouts:rw \
