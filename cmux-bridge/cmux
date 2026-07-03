@@ -1,0 +1,157 @@
+#!/usr/bin/env python3
+"""Container-side cmux shim for Dockerized Pi.
+
+Forwards `cmux ...` invocations to the host cmux bridge. It also translates the
+container workspace path back to the host workspace path for Pi resume bindings.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+from typing import Any
+
+
+def translate_path(value: Any) -> Any:
+    if not isinstance(value, str):
+        return value
+    container_root = os.environ.get("CMUX_PI_CONTAINER_PROJECT_ROOT", "/workspace").rstrip("/") or "/workspace"
+    host_root = os.environ.get("CMUX_PI_HOST_PROJECT_ROOT", "").rstrip("/")
+    if not host_root:
+        return value
+    if value == container_root:
+        return host_root
+    prefix = container_root + "/"
+    if value.startswith(prefix):
+        return host_root + "/" + value[len(prefix):]
+    return value
+
+
+def translate_json(value: Any) -> Any:
+    if isinstance(value, dict):
+        out: dict[str, Any] = {}
+        for key, item in value.items():
+            if key in {"cwd", "path", "directory", "workingDirectory", "working_directory"}:
+                out[key] = translate_path(item)
+            else:
+                out[key] = translate_json(item)
+        return out
+    if isinstance(value, list):
+        return [translate_json(x) for x in value]
+    return value
+
+
+def translated_stdin(stdin_text: str) -> str:
+    stripped = stdin_text.strip()
+    if not stripped.startswith("{") and not stripped.startswith("["):
+        return stdin_text
+    try:
+        parsed = json.loads(stdin_text)
+    except Exception:
+        return stdin_text
+    try:
+        return json.dumps(translate_json(parsed), separators=(",", ":"))
+    except Exception:
+        return stdin_text
+
+
+def rewrite_args(args: list[str]) -> list[str]:
+    cleaned: list[str] = []
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg == "--socket" and i + 1 < len(args):
+            i += 2
+            continue
+        if arg.startswith("--socket="):
+            i += 1
+            continue
+        cleaned.append(arg)
+        i += 1
+    args = cleaned
+
+    out = list(args)
+    i = 0
+    while i < len(out):
+        if out[i] == "--cwd" and i + 1 < len(out):
+            out[i + 1] = translate_path(out[i + 1])
+            i += 2
+            continue
+        if out[i].startswith("--cwd="):
+            out[i] = "--cwd=" + str(translate_path(out[i].split("=", 1)[1]))
+        i += 1
+
+    try:
+        sep = out.index("--")
+    except ValueError:
+        return out
+    if sep + 1 >= len(out):
+        return out
+    head = [x.lower() for x in out[:sep]]
+    if "surface" in head and "resume" in head and "set" in head:
+        launcher = os.environ.get("CMUX_PI_HOST_LAUNCHER", "").strip()
+        exe = os.path.basename(out[sep + 1]).lower()
+        if launcher and (exe in {"pi", "pi-coding-agent"} or "pi-coding-agent" in out[sep + 1].lower()):
+            out[sep + 1] = launcher
+    return out
+
+
+def bridge_env() -> dict[str, str]:
+    allowed: dict[str, str] = {}
+    for key, value in os.environ.items():
+        if key in {
+            "CMUX_WORKSPACE_ID", "CMUX_SURFACE_ID", "CMUX_PANEL_ID",
+            "CMUX_TAB_ID", "CMUX_WINDOW_ID", "CMUX_AGENT_HOOK_STATE_DIR",
+        } or key.startswith("CMUX_AGENT_LAUNCH_"):
+            allowed[key] = value
+    return allowed
+
+
+def main(argv: list[str]) -> int:
+    url = os.environ.get("CMUX_BRIDGE_URL", "").rstrip("/")
+    token = os.environ.get("CMUX_BRIDGE_TOKEN", "")
+    if not url or not token:
+        print("cmux bridge is not configured in this container", file=sys.stderr)
+        return 127
+
+    stdin_text = sys.stdin.read()
+    payload = {
+        "args": rewrite_args(argv),
+        "stdin": translated_stdin(stdin_text),
+        "cwd": translate_path(os.getcwd()),
+        "env": bridge_env(),
+    }
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        url + "/run",
+        data=data,
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token,
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=135) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        print(f"cmux bridge HTTP error: {exc.code}", file=sys.stderr)
+        return 1
+    except Exception as exc:
+        print(f"cmux bridge error: {exc}", file=sys.stderr)
+        return 1
+
+    if not result.get("ok"):
+        print("cmux bridge failed: " + str(result.get("error", "unknown error")), file=sys.stderr)
+        return 1
+    sys.stdout.write(result.get("stdout", ""))
+    sys.stderr.write(result.get("stderr", ""))
+    status = result.get("status", 1)
+    return int(status) if isinstance(status, int) else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))
