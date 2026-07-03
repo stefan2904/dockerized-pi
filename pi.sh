@@ -28,6 +28,20 @@ DOCKER_ENV_ARGS=()
 DOCKER_ENV_FILE_ARGS=()
 DOCKER_VOLUME_ARGS=()
 NEW_ARGS=()
+CMUX_BRIDGE_PID=""
+CMUX_BRIDGE_TMPDIR=""
+
+cleanup_cmux_bridge() {
+    if [ -n "$CMUX_BRIDGE_PID" ]; then
+        kill "$CMUX_BRIDGE_PID" >/dev/null 2>&1 || true
+        wait "$CMUX_BRIDGE_PID" >/dev/null 2>&1 || true
+    fi
+    if [ -n "$CMUX_BRIDGE_TMPDIR" ]; then
+        rm -rf "$CMUX_BRIDGE_TMPDIR" >/dev/null 2>&1 || true
+    fi
+}
+
+trap cleanup_cmux_bridge EXIT
 
 resolve_env_file() {
     local requested="$1"
@@ -421,6 +435,94 @@ esac
 # Calculate relative path from PROJECT_ROOT to PWD
 REL_PATH=${PWD:${#PROJECT_ROOT}}
 REL_PATH=${REL_PATH#/}
+
+setup_cmux_bridge() {
+    [ -n "${CMUX_SURFACE_ID:-}" ] || return 0
+    command -v cmux >/dev/null 2>&1 || return 0
+    [ -x "$SCRIPT_DIR/cmux-bridge/host.py" ] || return 0
+    [ -x "$SCRIPT_DIR/cmux-bridge/cmux" ] || return 0
+
+    local bridge_python=""
+    if command -v python3 >/dev/null 2>&1; then
+        bridge_python="$(command -v python3)"
+    elif command -v python >/dev/null 2>&1; then
+        bridge_python="$(command -v python)"
+    else
+        >&2 echo "WARNING: cmux detected, but python3/python is unavailable; Pi cmux hooks disabled."
+        return 0
+    fi
+
+    PI_CODING_AGENT_DIR="$SCRIPT_DIR/pi/agent" cmux hooks pi install --yes >/dev/null 2>&1 || true
+
+    CMUX_BRIDGE_TMPDIR="$(mktemp -d "${TMPDIR:-/tmp}/pi-cmux-bridge.XXXXXX")"
+    local ready_file="$CMUX_BRIDGE_TMPDIR/ready.json"
+    local bridge_uv_cache="$CMUX_BRIDGE_TMPDIR/uv-cache"
+    local token
+    token="$(LC_ALL=C od -An -N32 -tx1 /dev/urandom | tr -d ' \n')"
+    local cmux_bin
+    cmux_bin="$(command -v cmux)"
+
+    UV_CACHE_DIR="${UV_CACHE_DIR:-$bridge_uv_cache}" "$bridge_python" "$SCRIPT_DIR/cmux-bridge/host.py" \
+        --token "$token" \
+        --cmux-bin "$cmux_bin" \
+        --ready-file "$ready_file" &
+    CMUX_BRIDGE_PID=$!
+
+    local i
+    for i in $(seq 1 50); do
+        [ -s "$ready_file" ] && break
+        if ! kill -0 "$CMUX_BRIDGE_PID" >/dev/null 2>&1; then
+            >&2 echo "WARNING: cmux bridge exited before becoming ready; Pi cmux hooks disabled."
+            cleanup_cmux_bridge
+            CMUX_BRIDGE_PID=""
+            CMUX_BRIDGE_TMPDIR=""
+            return 0
+        fi
+        sleep 0.1
+    done
+    if [ ! -s "$ready_file" ]; then
+        >&2 echo "WARNING: cmux bridge did not become ready; Pi cmux hooks disabled."
+        cleanup_cmux_bridge
+        CMUX_BRIDGE_PID=""
+        CMUX_BRIDGE_TMPDIR=""
+        return 0
+    fi
+
+    local port
+    port="$(UV_CACHE_DIR="${UV_CACHE_DIR:-$bridge_uv_cache}" "$bridge_python" - "$ready_file" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as f:
+    print(json.load(f)["port"])
+PY
+)"
+
+    local launch_argv_b64
+    launch_argv_b64="$(UV_CACHE_DIR="${UV_CACHE_DIR:-$bridge_uv_cache}" "$bridge_python" - "$SCRIPT_DIR/pi.sh" "$@" <<'PY'
+import base64, sys
+payload = b"".join(arg.encode("utf-8") + b"\0" for arg in sys.argv[1:])
+print(base64.b64encode(payload).decode("ascii"), end="")
+PY
+)"
+
+    DOCKER_VOLUME_ARGS+=(-v "$SCRIPT_DIR/cmux-bridge/cmux:/usr/local/bin/cmux:ro")
+    DOCKER_ENV_ARGS+=(-e "CMUX_BRIDGE_URL=http://host.docker.internal:$port")
+    DOCKER_ENV_ARGS+=(-e "CMUX_BRIDGE_TOKEN=$token")
+    DOCKER_ENV_ARGS+=(-e "CMUX_PI_CMUX_BIN=/usr/local/bin/cmux")
+    DOCKER_ENV_ARGS+=(-e "CMUX_PI_HOST_LAUNCHER=$SCRIPT_DIR/pi.sh")
+    DOCKER_ENV_ARGS+=(-e "CMUX_PI_HOST_PROJECT_ROOT=$PROJECT_ROOT")
+    DOCKER_ENV_ARGS+=(-e "CMUX_PI_CONTAINER_PROJECT_ROOT=/workspace")
+    DOCKER_ENV_ARGS+=(-e "CMUX_WORKSPACE_ID=${CMUX_WORKSPACE_ID:-}")
+    DOCKER_ENV_ARGS+=(-e "CMUX_SURFACE_ID=${CMUX_SURFACE_ID:-}")
+    DOCKER_ENV_ARGS+=(-e "CMUX_PANEL_ID=${CMUX_PANEL_ID:-${CMUX_SURFACE_ID:-}}")
+    DOCKER_ENV_ARGS+=(-e "CMUX_TAB_ID=${CMUX_TAB_ID:-${CMUX_WORKSPACE_ID:-}}")
+    DOCKER_ENV_ARGS+=(-e "CMUX_AGENT_LAUNCH_KIND=pi")
+    DOCKER_ENV_ARGS+=(-e "CMUX_AGENT_LAUNCH_EXECUTABLE=$SCRIPT_DIR/pi.sh")
+    DOCKER_ENV_ARGS+=(-e "CMUX_AGENT_LAUNCH_ARGV_B64=$launch_argv_b64")
+    DOCKER_ENV_ARGS+=(-e "CMUX_AGENT_LAUNCH_CWD=$PWD")
+    >&2 echo "INFO: Enabled cmux bridge for Dockerized Pi hooks."
+}
+
+setup_cmux_bridge "$@"
 
 >&2 echo "INFO: Using project root: $PROJECT_ROOT"
 if [ -n "$REL_PATH" ]; then
