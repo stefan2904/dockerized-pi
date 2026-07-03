@@ -17,7 +17,8 @@ RUN if [ -n "$UID" ] && [ -n "$GID" ]; then \
         useradd -r -g pi -m -d /home/pi pi; \
     fi
 
-# Install stuff (including pi-chat runtime deps: tmux + qemu, and JVM tooling for Gradle/Kotlin)
+# Install stuff (including pi-chat runtime deps: tmux + qemu, JVM tooling for Maven/Gradle/Kotlin,
+# and smart-card/HSM tooling)
 RUN set -eux; \
     arch="$(dpkg --print-architecture)"; \
     case "$arch" in \
@@ -25,9 +26,13 @@ RUN set -eux; \
         arm64) qemu_pkgs="qemu-system-arm qemu-efi-aarch64 ipxe-qemu" ;; \
         *) echo "Unsupported architecture for pi-chat dependencies: $arch" >&2; exit 1 ;; \
     esac; \
-    apt-get update && apt-get install -y --no-install-recommends \
+    apt-get update; \
+    pcsc_tools_pkg=""; \
+    if apt-cache show pcsc-tools >/dev/null 2>&1; then pcsc_tools_pkg="pcsc-tools"; fi; \
+    apt-get install -y --no-install-recommends \
     zsh git wget curl jq tree file sudo gosu ripgrep ca-certificates tmux qemu-utils sqlite3 $qemu_pkgs \
-    openjdk-21-jdk unzip pandoc && \
+    openjdk-21-jdk maven unzip pandoc \
+    opensc pcscd $pcsc_tools_pkg libpcsclite1 libpcsclite-dev libccid usbutils softhsm2 && \
     ln -s /usr/lib/jvm/java-21-openjdk-* /opt/openjdk-default && \
     java -version && \
     javac -version && \
