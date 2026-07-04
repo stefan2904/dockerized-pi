@@ -23,6 +23,7 @@ pi/agent/mcp-cache.json
 pi/agent/mcp-npx-cache.json
 pi/agent/agents/
 pi/agent/trust.json
+pi/agent/extensions/cmux-session.ts
 
 .cache
 
