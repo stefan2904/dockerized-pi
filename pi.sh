@@ -299,8 +299,8 @@ if [ "$DO_UPDATE" = true ]; then
         fi
     fi
 
-    >&2 echo "Updating configured packages ..."
-    ./pi.sh update --all
+    >&2 echo "Updating configured extensions ..."
+    ./pi.sh update --extensions
     exit 0
 fi
 
