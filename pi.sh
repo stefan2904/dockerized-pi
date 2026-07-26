@@ -496,6 +496,24 @@ with open(sys.argv[1], encoding="utf-8") as f:
 PY
 )"
 
+    local bridge_config="$CMUX_BRIDGE_TMPDIR/config.json"
+    UV_CACHE_DIR="$bridge_uv_cache" "$bridge_python" - \
+        "$bridge_config" "$port" "$token" "$SCRIPT_DIR/pi.sh" "$PROJECT_ROOT" <<'PY'
+import json, os, sys
+
+config_path, port, token, host_launcher, host_project_root = sys.argv[1:]
+with open(config_path, "w", encoding="utf-8") as config_file:
+    json.dump({
+        "url": f"http://host.docker.internal:{port}",
+        "token": token,
+        "host_launcher": host_launcher,
+        "host_project_root": host_project_root,
+        "container_project_root": "/workspace",
+    }, config_file, separators=(",", ":"))
+    config_file.write("\n")
+os.chmod(config_path, 0o600)
+PY
+
     local launch_argv_b64
     launch_argv_b64="$(UV_CACHE_DIR="${UV_CACHE_DIR:-$bridge_uv_cache}" "$bridge_python" - "$SCRIPT_DIR/pi.sh" "$@" <<'PY'
 import base64, sys
@@ -505,6 +523,7 @@ PY
 )"
 
     DOCKER_VOLUME_ARGS+=(-v "$SCRIPT_DIR/cmux-bridge/cmux:/usr/local/bin/cmux:ro")
+    DOCKER_VOLUME_ARGS+=(-v "$bridge_config:/tmp/cmux-pi-bridge.json:ro")
     DOCKER_ENV_ARGS+=(-e "CMUX_BRIDGE_URL=http://host.docker.internal:$port")
     DOCKER_ENV_ARGS+=(-e "CMUX_BRIDGE_TOKEN=$token")
     DOCKER_ENV_ARGS+=(-e "CMUX_PI_CMUX_BIN=/usr/local/bin/cmux")

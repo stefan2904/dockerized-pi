@@ -25,6 +25,12 @@ else
 fi
 unset PI_SUDO_PASSWORD
 
+# Docker creates parents of nested bind mounts as root. Make the cache root
+# writable before dropping privileges so Python/uv and other tools can create
+# their own cache directories alongside the persisted mounts.
+mkdir -p /home/pi/.cache
+chown pi:"$(id -gn pi)" /home/pi/.cache
+
 # Configure git if environment variables are set
 if [ -n "$BOT_GIT_NAME" ]; then
     gosu pi git config --global user.name "$BOT_GIT_NAME"

@@ -1,11 +1,20 @@
-#!/usr/bin/env python3
+#!/bin/sh
+""":"
+# Pi extensions may prepend Python-interception shims to PATH. Select the
+# image's interpreter by absolute path so this bridge cannot recurse through
+# those shims (which may also require a writable uv cache).
+if [ -x /usr/local/bin/python3 ]; then
+    exec /usr/local/bin/python3 "$0" "$@"
+fi
+exec /usr/bin/python3 "$0" "$@"
+":"""
+from __future__ import annotations
+
 """Container-side cmux shim for Dockerized Pi.
 
 Forwards `cmux ...` invocations to the host cmux bridge. It also translates the
 container workspace path back to the host workspace path for Pi resume bindings.
 """
-
-from __future__ import annotations
 
 import json
 import os
@@ -14,12 +23,40 @@ import urllib.error
 import urllib.request
 from typing import Any
 
+BRIDGE_CONFIG_PATH = "/tmp/cmux-pi-bridge.json"
+_BRIDGE_CONFIG: dict[str, Any] | None = None
+
+
+def bridge_config() -> dict[str, Any]:
+    global _BRIDGE_CONFIG
+    if _BRIDGE_CONFIG is not None:
+        return _BRIDGE_CONFIG
+    try:
+        with open(BRIDGE_CONFIG_PATH, encoding="utf-8") as config_file:
+            value = json.load(config_file)
+        _BRIDGE_CONFIG = value if isinstance(value, dict) else {}
+    except Exception:
+        _BRIDGE_CONFIG = {}
+    return _BRIDGE_CONFIG
+
+
+def bridge_setting(env_key: str, config_key: str, default: str = "") -> str:
+    env_value = os.environ.get(env_key, "").strip()
+    if env_value:
+        return env_value
+    config_value = bridge_config().get(config_key)
+    return config_value.strip() if isinstance(config_value, str) else default
+
 
 def translate_path(value: Any) -> Any:
     if not isinstance(value, str):
         return value
-    container_root = os.environ.get("CMUX_PI_CONTAINER_PROJECT_ROOT", "/workspace").rstrip("/") or "/workspace"
-    host_root = os.environ.get("CMUX_PI_HOST_PROJECT_ROOT", "").rstrip("/")
+    container_root = bridge_setting(
+        "CMUX_PI_CONTAINER_PROJECT_ROOT", "container_project_root", "/workspace"
+    ).rstrip("/") or "/workspace"
+    host_root = bridge_setting(
+        "CMUX_PI_HOST_PROJECT_ROOT", "host_project_root"
+    ).rstrip("/")
     if not host_root:
         return value
     if value == container_root:
@@ -92,7 +129,7 @@ def rewrite_args(args: list[str]) -> list[str]:
         return out
     head = [x.lower() for x in out[:sep]]
     if "surface" in head and "resume" in head and "set" in head:
-        launcher = os.environ.get("CMUX_PI_HOST_LAUNCHER", "").strip()
+        launcher = bridge_setting("CMUX_PI_HOST_LAUNCHER", "host_launcher")
         exe = os.path.basename(out[sep + 1]).lower()
         if launcher and (exe in {"pi", "pi-coding-agent"} or "pi-coding-agent" in out[sep + 1].lower()):
             out[sep + 1] = launcher
@@ -111,8 +148,8 @@ def bridge_env() -> dict[str, str]:
 
 
 def main(argv: list[str]) -> int:
-    url = os.environ.get("CMUX_BRIDGE_URL", "").rstrip("/")
-    token = os.environ.get("CMUX_BRIDGE_TOKEN", "")
+    url = bridge_setting("CMUX_BRIDGE_URL", "url").rstrip("/")
+    token = bridge_setting("CMUX_BRIDGE_TOKEN", "token")
     if not url or not token:
         print("cmux bridge is not configured in this container", file=sys.stderr)
         return 127
