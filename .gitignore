@@ -21,8 +21,10 @@ pi/agent/telegram.json
 pi/agent/tmp/
 pi/agent/mcp-cache.json
 pi/agent/mcp-npx-cache.json
+pi/agent/models-store.json
 pi/agent/agents/
 pi/agent/trust.json
+pi/agent/tmux-subagents/
 pi/agent/extensions/cmux-session.ts
 
 .cache
