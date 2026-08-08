@@ -26,6 +26,7 @@ pi/agent/agents/
 pi/agent/trust.json
 pi/agent/tmux-subagents/
 pi/agent/extensions/cmux-session.ts
+pi/agent/extensions/.cmux-session.lock
 
 .cache
 
