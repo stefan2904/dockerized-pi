@@ -3,7 +3,14 @@ import { get } from "node:https";
 import { hostname, networkInterfaces } from "node:os";
 
 type IpFamily = 4 | 6;
-type PublicIp = { ip: string; hostname?: string };
+type PublicIp = {
+  ip: string;
+  hostname?: string;
+  asn?: string;
+  asnOrg?: string;
+  country?: string;
+  city?: string;
+};
 
 function fetchPublicIp(family: IpFamily): Promise<PublicIp> {
   return new Promise((resolve, reject) => {
@@ -20,11 +27,15 @@ function fetchPublicIp(family: IpFamily): Promise<PublicIp> {
         response.on("end", () => {
           try {
             if (response.statusCode !== 200) throw new Error(`HTTP ${response.statusCode}`);
-            const data = JSON.parse(body) as { ip?: unknown; hostname?: unknown };
+            const data = JSON.parse(body) as Record<string, unknown>;
             if (typeof data.ip !== "string") throw new Error("invalid response");
             resolve({
               ip: data.ip,
               hostname: typeof data.hostname === "string" ? data.hostname : undefined,
+              asn: typeof data.asn === "string" ? data.asn : undefined,
+              asnOrg: typeof data.asn_org === "string" ? data.asn_org : undefined,
+              country: typeof data.country === "string" ? data.country : undefined,
+              city: typeof data.city === "string" ? data.city : undefined,
             });
           } catch (error) {
             reject(error);
@@ -57,9 +68,19 @@ export default function (pi: ExtensionAPI) {
       const formatInternal = (addresses: typeof internal4) =>
         addresses.length ? addresses.map((entry) => entry.address).join(", ") : "unavailable";
 
+      const publicDetails = public4.status === "fulfilled"
+        ? public4.value
+        : public6.status === "fulfilled"
+          ? public6.value
+          : undefined;
+
       const output = [
         `Public IPv4: ${formatPublic(public4)}`,
         `Public IPv6: ${formatPublic(public6)}`,
+        `ASN: ${publicDetails?.asn ?? "unavailable"}`,
+        `ASN org: ${publicDetails?.asnOrg ?? "unavailable"}`,
+        `Country: ${publicDetails?.country ?? "unavailable"}`,
+        `City: ${publicDetails?.city ?? "unavailable"}`,
         `Internal hostname: ${hostname()}`,
         `Internal IPv4: ${formatInternal(internal4)}`,
         `Internal IPv6: ${formatInternal(internal6)}`,
