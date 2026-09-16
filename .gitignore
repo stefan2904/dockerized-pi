@@ -16,6 +16,7 @@ pi/agent/codex-account-switcher.json
 pi/agent/codex-account-switcher*.json
 pi/agent/sessions/*
 pi/agent/sessions/logs/*
+pi/agent/skills/git-autopep8/scripts/__pycache__/
 pi/agent/chat/
 pi/agent/telegram.json
 pi/agent/tmp/
@@ -29,6 +30,8 @@ pi/agent/tmux-subagents/
 pi/agent/extensions/cmux-session.ts
 pi/agent/extensions/.cmux-session.lock
 
+
+pi/web-search-cache/
 .cache
 
 # OS generated files
