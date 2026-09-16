@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "0.85.0",
+  "lastChangelogVersion": "0.85.1",
   "theme": "modern-dark",
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-5.6-sol",
@@ -13,17 +13,14 @@
   "editorPaddingX": 0,
   "collapseChangelog": true,
   "enabledModels": [
-    "openai-codex/gpt-5.5",
-    "github-copilot/gemini-3.1-pro-preview",
-    "github-copilot/gemini-3-flash-preview",
-    "github-copilot/claude-haiku-4.5",
-    "openai-codex/gpt-5.4-mini",
     "openrouter/openrouter/free",
     "openrouter/nvidia/nemotron-3-ultra-550b-a55b:free",
-    "openrouter/poolside/laguna-m.1:free",
     "openai-codex/gpt-5.6-luna",
     "openai-codex/gpt-5.6-sol",
-    "openai-codex/gpt-5.6-terra"
+    "openai-codex/gpt-5.6-terra",
+    "openai-codex/gpt-6-astra",
+    "hetzner/Qwen3.8-27B",
+    "hetzner/Qwen/Qwen3.6-35B-A3B-FP8"
   ],
   "packages": [
     {
