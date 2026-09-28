@@ -1,21 +1,2 @@
 {
-  "version": 1,
-  "currentMode": "default",
-  "modes": {
-    "default": {
-      "provider": "kilo-code",
-      "modelId": "z-ai/glm-5:free",
-      "thinkingLevel": "high"
-    },
-    "fast": {
-      "provider": "google-antigravity",
-      "modelId": "gemini-3-flash",
-      "thinkingLevel": "medium"
-    },
-    "opus": {
-      "provider": "google-antigravity",
-      "modelId": "claude-opus-4-6-thinking",
-      "thinkingLevel": "high"
-    }
-  }
 }
