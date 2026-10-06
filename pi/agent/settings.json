@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "0.87.1",
+  "lastChangelogVersion": "1.0.4",
   "theme": "modern-dark",
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-5.6-sol",
@@ -42,7 +42,6 @@
       ]
     },
     "git:github.com/lucasmeijer/pi-terminal-signals",
-    "npm:pi-mcp-adapter",
     {
       "source": "npm:pi-web-access",
       "skills": [
@@ -62,5 +61,8 @@
   "tuiMode": "fullscreen",
   "outputPad": 1,
   "showHardwareCursor": false,
-  "showCacheMissNotices": true
+  "showCacheMissNotices": true,
+  "extensions": [
+    "-builtin:mcp"
+  ]
 }
