@@ -23,6 +23,7 @@ pi/agent/tmp/
 pi/agent/mcp-cache.json
 pi/agent/mcp-npx-cache.json
 pi/agent/mcp-onboarding.json
+pi/agent/mcp-project-approvals.json
 pi/agent/models-store.json
 pi/agent/agents/
 pi/agent/trust.json
