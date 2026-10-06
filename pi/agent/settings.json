@@ -63,6 +63,5 @@
   "showHardwareCursor": false,
   "showCacheMissNotices": true,
   "extensions": [
-    "-builtin:mcp"
   ]
 }
