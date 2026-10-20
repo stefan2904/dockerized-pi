@@ -30,7 +30,7 @@ RUN set -eux; \
     pcsc_tools_pkg=""; \
     if apt-cache show pcsc-tools >/dev/null 2>&1; then pcsc_tools_pkg="pcsc-tools"; fi; \
     apt-get install -y --no-install-recommends \
-    zsh git wget curl jq tree file sudo gosu ripgrep ca-certificates tmux qemu-utils sqlite3 $qemu_pkgs \
+    zsh git wget curl jq tree file sudo gosu ripgrep ca-certificates tmux build-essential qemu-utils sqlite3 $qemu_pkgs \
     openjdk-21-jdk maven unzip pandoc \
     opensc pcscd $pcsc_tools_pkg libpcsclite1 libpcsclite-dev libccid usbutils softhsm2 && \
     ln -s /usr/lib/jvm/java-21-openjdk-* /opt/openjdk-default && \
