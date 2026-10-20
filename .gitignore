@@ -20,6 +20,7 @@ pi/agent/skills/git-autopep8/scripts/__pycache__/
 pi/agent/chat/
 pi/agent/telegram.json
 pi/agent/tmp/
+pi/agent/mcp-auth.json
 pi/agent/mcp-cache.json
 pi/agent/mcp-npx-cache.json
 pi/agent/mcp-onboarding.json
