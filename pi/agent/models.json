@@ -47,7 +47,7 @@
             ]
         },
         "hetzner": {
-            "baseUrl": "https://inference.hetzner.com/api/v1",
+            "baseUrl": "https://inference.hetzner.com/v1",
             "api": "openai-completions",
             "apiKey": "$HETZNER_INFERENCE_API_TOKEN",
             "compat": {
