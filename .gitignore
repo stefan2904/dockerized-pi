@@ -38,3 +38,4 @@ pi/web-search-cache/
 
 # OS generated files
 .DS_Store
+pi/agent/pi-web-access/last-seen-version.json
