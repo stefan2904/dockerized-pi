@@ -70,7 +70,6 @@
   "showHardwareCursor": false,
   "showCacheMissNotices": true,
   "extensions": [],
-  "deviceId": "90c88f46-b57c-4f4d-8f23-644d3dd4aaee"
   "extensionChangelogVersions": {
     "{\"source\":\"git:github.com/mitsuhiko/agent-stuff\",\"scope\":\"user\"}": "1.6.0",
     "{\"source\":\"npm:pi-web-access\",\"scope\":\"user\"}": "0.46.0"
