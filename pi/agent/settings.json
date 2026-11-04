@@ -26,7 +26,6 @@
     "xai/grok-4.7",
     "opencode/deepseek-v4.1-flash-free",
     "opencode/glm-5.3-flash-free",
-    "opencode/minimax-m3.1-flash-free",
     "openrouter/typesafe/jev-router"
   ],
   "packages": [
