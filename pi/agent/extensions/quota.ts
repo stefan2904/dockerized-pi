@@ -10,7 +10,6 @@ const GOOGLE_BASE_URL = "https://cloudcode-pa.googleapis.com";
 const CHATGPT_BASE_URL = "https://chatgpt.com/backend-api";
 const OPENAI_AUTH_CLAIM = "https://api.openai.com/auth";
 const OPENAI_PROFILE_CLAIM = "https://api.openai.com/profile";
-const CODEX_QUOTA_PROBE_MODELS = ["gpt-5.5", "gpt-5.4"];
 
 const COPILOT_HEADERS = {
   "User-Agent": "GitHubCopilotChat/0.35.0",
@@ -94,11 +93,10 @@ interface CodexRateWindow {
   windowMinutes?: number;
 }
 
-interface CodexProbeQuota {
+interface CodexQuota {
   planType?: string;
   primary?: CodexRateWindow;
   secondary?: CodexRateWindow;
-  primaryOverSecondaryPercent?: number;
   creditsUnlimited?: boolean;
   creditsHasCredits?: boolean;
   creditsBalance?: number;
@@ -219,34 +217,31 @@ async function fetchGoogleQuota(config: AuthProviderConfig, ideType: "ANTIGRAVIT
   return { loadData, modelsData, modelsError };
 }
 
-function parseHeaderNumber(value: string | null): number | undefined {
-  if (!value) return undefined;
+function parseQuotaNumber(value: unknown): number | undefined {
+  if (typeof value !== "number" && typeof value !== "string") return undefined;
+  if (typeof value === "string" && !value.trim()) return undefined;
   const n = Number(value);
   return Number.isFinite(n) ? n : undefined;
 }
 
-function parseHeaderBool(value: string | null): boolean | undefined {
-  if (!value) return undefined;
-  if (value.toLowerCase() === "true") return true;
-  if (value.toLowerCase() === "false") return false;
-  return undefined;
-}
-
-function parseCodexWindow(headers: Headers, prefix: "x-codex-primary" | "x-codex-secondary"): CodexRateWindow {
+function parseCodexWindow(value: unknown): CodexRateWindow | undefined {
+  const window = asRecord(value);
+  if (!window) return undefined;
+  const windowSeconds = parseQuotaNumber(window.limit_window_seconds);
   return {
-    usedPercent: parseHeaderNumber(headers.get(`${prefix}-used-percent`)),
-    resetAt: parseHeaderNumber(headers.get(`${prefix}-reset-at`)),
-    resetAfterSeconds: parseHeaderNumber(headers.get(`${prefix}-reset-after-seconds`)),
-    windowMinutes: parseHeaderNumber(headers.get(`${prefix}-window-minutes`)),
+    usedPercent: parseQuotaNumber(window.used_percent),
+    resetAt: parseQuotaNumber(window.reset_at),
+    resetAfterSeconds: parseQuotaNumber(window.reset_after_seconds),
+    windowMinutes: windowSeconds !== undefined ? windowSeconds / 60 : undefined,
   };
 }
 
-async function fetchOpenAICodexQuota(config: AuthProviderConfig) {
-  if (!config.access) {
-    throw new Error("missing access token");
+async function fetchOpenAICodexQuota(config: AuthProviderConfig, access: string | undefined, signal?: AbortSignal) {
+  if (!access) {
+    throw new Error("missing or expired OpenAI Codex credentials; sign in again with /login");
   }
 
-  const jwt = decodeJwtPayload(config.access);
+  const jwt = decodeJwtPayload(access);
   const authClaim = asRecord(jwt?.[OPENAI_AUTH_CLAIM]);
   const profileClaim = asRecord(jwt?.[OPENAI_PROFILE_CLAIM]);
   const accountId =
@@ -257,63 +252,36 @@ async function fetchOpenAICodexQuota(config: AuthProviderConfig) {
     throw new Error("missing account id");
   }
 
-  const headers = {
-    Authorization: `Bearer ${config.access}`,
-    "chatgpt-account-id": accountId,
-    originator: "pi",
-    "OpenAI-Beta": "responses=experimental",
-    "User-Agent": `pi (${os.platform()} ${os.release()}; ${os.arch()})`,
-    accept: "text/event-stream",
-    "content-type": "application/json",
-  };
+  // The usage endpoint is model-independent and does not consume inference quota.
+  const timeout = AbortSignal.timeout(15000);
+  const response = await fetch(`${CHATGPT_BASE_URL}/wham/usage`, {
+    headers: {
+      Authorization: `Bearer ${access}`,
+      "chatgpt-account-id": accountId,
+      accept: "application/json",
+    },
+    signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+  });
 
-  let response: Response | undefined;
-  const failures: string[] = [];
-
-  for (const model of CODEX_QUOTA_PROBE_MODELS) {
-    const probeBody = {
-      model,
-      store: false,
-      stream: true,
-      instructions: "You are a quota probe.",
-      input: [{ role: "user", content: [{ type: "input_text", text: "ping" }] }],
-      text: { verbosity: "low" as const },
-    };
-
-    const probeResponse = await fetch(`${CHATGPT_BASE_URL}/codex/responses`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(probeBody),
-    });
-
-    if (probeResponse.ok) {
-      response = probeResponse;
-      break;
-    }
-
-    const body = await probeResponse.text();
-    failures.push(`${model}: ${probeResponse.status} ${body.slice(0, 120)}`);
-  }
-
-  if (!response) {
-    throw new Error(`codex probe failed (${failures.join("; ")})`);
-  }
-
-  // We only need headers; cancel stream to minimize output processing.
-  try {
+  if (!response.ok) {
     await response.body?.cancel();
-  } catch {
-    // ignore
+    const hint = response.status === 401 ? "; sign in again with /login" : "";
+    throw new Error(`Codex usage request failed (${response.status})${hint}`);
   }
 
-  const quota: CodexProbeQuota = {
-    planType: response.headers.get("x-codex-plan-type") || undefined,
-    primary: parseCodexWindow(response.headers, "x-codex-primary"),
-    secondary: parseCodexWindow(response.headers, "x-codex-secondary"),
-    primaryOverSecondaryPercent: parseHeaderNumber(response.headers.get("x-codex-primary-over-secondary-limit-percent")),
-    creditsUnlimited: parseHeaderBool(response.headers.get("x-codex-credits-unlimited")),
-    creditsHasCredits: parseHeaderBool(response.headers.get("x-codex-credits-has-credits")),
-    creditsBalance: parseHeaderNumber(response.headers.get("x-codex-credits-balance")),
+  const usage = asRecord(await response.json());
+  if (!usage || !("rate_limit" in usage)) {
+    throw new Error("Unexpected Codex usage response: missing rate_limit");
+  }
+  const rateLimit = asRecord(usage.rate_limit);
+  const credits = asRecord(usage.credits);
+  const quota: CodexQuota = {
+    planType: typeof usage.plan_type === "string" ? usage.plan_type : undefined,
+    primary: parseCodexWindow(rateLimit?.primary_window),
+    secondary: parseCodexWindow(rateLimit?.secondary_window),
+    creditsUnlimited: typeof credits?.unlimited === "boolean" ? credits.unlimited : undefined,
+    creditsHasCredits: typeof credits?.has_credits === "boolean" ? credits.has_credits : undefined,
+    creditsBalance: parseQuotaNumber(credits?.balance),
   };
 
   return {
@@ -344,7 +312,7 @@ type ProviderResult =
         accountId: string;
         emailFromToken?: string;
         planFromToken?: string;
-        quota: CodexProbeQuota;
+        quota: CodexQuota;
       };
     }
   | { provider: string; config: AuthProviderConfig; kind: "error"; error: string }
@@ -547,7 +515,11 @@ export default function (pi: ExtensionAPI) {
                   provider,
                   config,
                   kind: "openai-codex",
-                  data: await fetchOpenAICodexQuota(config),
+                  data: await fetchOpenAICodexQuota(
+                    config,
+                    await ctx.modelRegistry.getApiKeyForProvider(provider),
+                    ctx.signal,
+                  ),
                 };
               }
               return { provider, config, kind: "unsupported" };
@@ -664,17 +636,6 @@ export default function (pi: ExtensionAPI) {
                   progressRemaining: secondary.progressRemaining,
                 });
 
-                if (typeof quota.primaryOverSecondaryPercent === "number") {
-                  rows.push({
-                    provider: entry.provider,
-                    account,
-                    plan,
-                    metric: "primary_over_secondary",
-                    value: `${quota.primaryOverSecondaryPercent.toFixed(1)}%`,
-                    reset: "-",
-                  });
-                }
-
                 if (quota.creditsUnlimited) {
                   rows.push({ provider: entry.provider, account, plan, metric: "credits", value: "Unlimited", reset: "-" });
                 } else if (quota.creditsHasCredits && typeof quota.creditsBalance === "number") {
@@ -767,14 +728,16 @@ export default function (pi: ExtensionAPI) {
   pi.registerTool({
     name: "get_openai_codex_quota",
     label: "Get OpenAI Codex Quota",
-    description: "Probe OpenAI Codex quota headers and account plan details.",
+    description: "Fetch OpenAI Codex usage limits and account plan details without consuming inference quota.",
     parameters: Type.Object({}),
-    async execute() {
+    async execute(_toolCallId, _params, signal, _onUpdate, ctx) {
       try {
         const auth = loadAuth();
         const config = auth["openai-codex"];
         if (!config) throw new Error("openai-codex config not found in auth.json");
-        const data = await fetchOpenAICodexQuota(config);
+        // Let Pi refresh OAuth credentials instead of using a possibly expired auth.json token.
+        const access = await ctx.modelRegistry.getApiKeyForProvider("openai-codex");
+        const data = await fetchOpenAICodexQuota(config, access, signal);
         return {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
           details: data,
