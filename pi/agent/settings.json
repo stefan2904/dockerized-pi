@@ -2,7 +2,7 @@
   "lastChangelogVersion": "1.5.2",
   "theme": "modern-dark",
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-6.1-sol",
+  "defaultModel": "gpt-6.2-sol",
   "defaultThinkingLevel": "high",
   "hideThinkingBlock": true,
   "shellPath": "/bin/zsh",
@@ -71,6 +71,6 @@
   "extensions": [],
   "extensionChangelogVersions": {
     "{\"source\":\"git:github.com/mitsuhiko/agent-stuff\",\"scope\":\"user\"}": "1.6.0",
-    "{\"source\":\"npm:pi-web-access\",\"scope\":\"user\"}": "0.47.0"
+    "{\"source\":\"npm:pi-web-access\",\"scope\":\"user\"}": "0.48.0"
   }
 }
