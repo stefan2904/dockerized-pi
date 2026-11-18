@@ -13,6 +13,9 @@
   "editorPaddingX": 0,
   "collapseChangelog": true,
   "enabledModels": [
+    "openai-codex/gpt-6.2-astra",
+    "openai-codex/gpt-6.2-sol",
+    "openai-codex/gpt-6-luna",
     "openai-codex/gpt-6.1-terra",
     "hetzner/Qwen3.8-27B",
     "hetzner/Qwen/Qwen3.6-35B-A3B-FP8",
@@ -23,10 +26,7 @@
     "xai/grok-4.7",
     "opencode/deepseek-v4.1-flash-free",
     "opencode/glm-5.3-flash-free",
-    "openrouter/typesafe/jev-router",
-    "openai-codex/gpt-6.2-astra",
-    "openai-codex/gpt-6.2-sol",
-    "openai-codex/gpt-6-luna"
+    "openrouter/typesafe/jev-router"
   ],
   "packages": [
     {
