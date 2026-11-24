@@ -1,5 +1,5 @@
 {
-  "lastChangelogVersion": "1.5.2",
+  "lastChangelogVersion": "1.6.0",
   "theme": "modern-dark",
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-6.2-sol",
@@ -71,6 +71,7 @@
   "extensions": [],
   "extensionChangelogVersions": {
     "{\"source\":\"git:github.com/mitsuhiko/agent-stuff\",\"scope\":\"user\"}": "1.6.0",
-    "{\"source\":\"npm:pi-web-access\",\"scope\":\"user\"}": "0.48.0"
+    "{\"source\":\"npm:pi-web-access\",\"scope\":\"user\"}": "0.48.0",
+    "{\"source\":\"~/.pi/agent/git/github.com/mitsuhiko/agent-stuff\",\"scope\":\"project\"}": "1.6.0"
   }
 }
